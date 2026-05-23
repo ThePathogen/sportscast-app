@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#080c08">
+<title>SportsCast AI</title>
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#080c08;--surface:#0f140f;--card:#141a14;--border:#1e2a1e;
+  --green:#2dff7a;--green-dim:#1a9947;--amber:#ffb830;--red:#ff3d3d;
+  --text:#e8f0e8;--muted:#5a7a5a;--gold:#d4a843;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+.header{position:sticky;top:0;z-index:100;background:rgba(8,12,8,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 16px 10px}
+.header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:3px;color:var(--green);text-shadow:0 0 20px rgba(45,255,122,0.3)}
+.logo span{color:var(--gold)}
+.refresh-btn{background:var(--border);border:1px solid var(--green-dim);color:var(--green);font-size:18px;width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.refresh-btn:active{transform:scale(0.9);background:var(--green-dim)}
+.refresh-btn.spinning{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tabs{display:flex;gap:6px}
+.tab{flex:1;padding:7px 4px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;cursor:pointer;transition:all 0.2s;text-align:center}
+.tab.active{background:var(--green);color:var(--bg);border-color:var(--green);font-weight:500}
+.content{padding:14px 12px 90px}
+.stat-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 8px;text-align:center}
+.stat-val{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;line-height:1}
+.stat-val.green{color:var(--green)}.stat-val.amber{color:var(--amber)}.stat-val.red{color:var(--red)}
+.stat-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;margin-top:3px}
+.section-header{display:flex;align-items:center;gap:8px;margin:16px 0 8px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase}
+.section-header::after{content:'';flex:1;height:1px;background:var(--border)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;position:relative;overflow:hidden;transition:transform 0.15s}
+.card:active{transform:scale(0.98)}
+.card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:12px 0 0 12px}
+.card.high::before{background:var(--green)}.card.medium::before{background:var(--amber)}.card.low::before{background:var(--red)}
+.card-sport{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted);margin-bottom:4px}
+.card-winner{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:var(--text);line-height:1.1;margin-bottom:10px}
+.card-winner .odds{font-family:'DM Mono',monospace;font-size:14px;color:var(--gold);font-weight:400}
+.card-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.conf-bar-wrap{flex:1;min-width:80px}
+.conf-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:3px}
+.conf-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.conf-fill{height:100%;border-radius:2px;transition:width 0.6s ease}
+.conf-pct{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;min-width:44px;text-align:right}
+.badge{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;padding:3px 7px;border-radius:20px;border:1px solid}
+.badge.pending{color:var(--amber);border-color:var(--amber);background:rgba(255,184,48,0.08)}
+.badge.correct{color:var(--green);border-color:var(--green);background:rgba(45,255,122,0.08)}
+.badge.incorrect{color:var(--red);border-color:var(--red);background:rgba(255,61,61,0.08)}
+.card-time{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-left:auto}
+.empty{text-align:center;padding:48px 24px;color:var(--muted)}
+.empty-icon{font-size:48px;margin-bottom:12px}
+.empty-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;margin-bottom:6px}
+.empty-sub{font-size:13px;line-height:1.5}
+.loading{display:flex;align-items:center;justify-content:center;gap:8px;padding:32px;color:var(--muted);font-family:'DM Mono',monospace;font-size:12px;letter-spacing:1px}
+.dot-pulse{display:flex;gap:4px}
+.dot-pulse span{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.2s ease-in-out infinite}
+.dot-pulse span:nth-child(2){animation-delay:0.2s}.dot-pulse span:nth-child(3){animation-delay:0.4s}
+@keyframes pulse{0%,80%,100%{opacity:0.2}40%{opacity:1}}
+.accuracy-card{background:linear-gradient(135deg,var(--card) 0%,rgba(45,255,122,0.05) 100%);border:1px solid var(--green-dim);border-radius:12px;padding:16px;margin-bottom:14px}
+.accuracy-title{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--green);margin-bottom:10px}
+.accuracy-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border);font-size:13px}
+.accuracy-row:last-child{border-bottom:none}
+.accuracy-pct{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:200;backdrop-filter:blur(4px)}
+.modal-bg.open{display:flex;align-items:flex-end}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:20px 16px 40px;width:100%;max-height:70vh;overflow-y:auto}
+.modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--green);margin-bottom:16px}
+.input-group{margin-bottom:14px}
+.input-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--muted);margin-bottom:6px;display:block}
+.input-field{width:100%;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none}
+.input-field:focus{border-color:var(--green-dim)}
+.save-btn{width:100%;background:var(--green);color:var(--bg);border:none;border-radius:10px;padding:14px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;cursor:pointer;margin-top:8px}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(8,12,8,0.95);backdrop-filter:blur(12px);border-top:1px solid var(--border);display:flex;padding:8px 0 20px}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px 0;transition:all 0.2s}
+.nav-icon{font-size:20px}
+.nav-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--muted)}
+.nav-item.active .nav-label{color:var(--green)}
+.setup-hint{background:rgba(212,168,67,0.1);border:1px solid var(--gold);border-radius:10px;padding:12px;font-size:13px;color:var(--gold);text-align:center;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-top">
+    <div class="logo">Sports<span>Cast</span> AI</div>
+    <button class="refresh-btn" id="refreshBtn" onclick="loadData()">↻</button>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('mlb',this)">⚾ MLB</button>
+    <button class="tab" onclick="switchTab('racing',this)">🐎 RACING</button>
+    <button class="tab" onclick="switchTab('history',this)">📋 HISTORY</button>
+    <button class="tab" onclick="switchTab('stats',this)">📊 STATS</button>
+  </div>
+</div>
+<div class="content" id="content">
+  <div class="loading"><div class="dot-pulse"><span></span><span></span><span></span></div> LOADING</div>
+</div>
+<div class="bottom-nav">
+  <div class="nav-item active" onclick="switchTab('mlb',null,this)"><div class="nav-icon">⚾</div><div class="nav-label">MLB</div></div>
+  <div class="nav-item" onclick="switchTab('racing',null,this)"><div class="nav-icon">🐎</div><div class="nav-label">RACING</div></div>
+  <div class="nav-item" onclick="switchTab('history',null,this)"><div class="nav-icon">📋</div><div class="nav-label">HISTORY</div></div>
+  <div class="nav-item" onclick="switchTab('stats',null,this)"><div class="nav-icon">📊</div><div class="nav-label">STATS</div></div>
+  <div class="nav-item" onclick="openConfig()"><div class="nav-icon">⚙️</div><div class="nav-label">SETUP</div></div>
+</div>
+<div class="modal-bg" id="modalBg" onclick="closeConfig(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Setup</div>
+    <div class="input-group">
+      <label class="input-label">GOOGLE SHEETS ID</label>
+      <input class="input-field" id="sheetId" placeholder="Paste your Sheet ID here…">
+    </div>
+    <div class="input-group">
+      <label class="input-label">GOOGLE SHEETS API KEY</label>
+      <input class="input-field" id="apiKey" placeholder="AIza…">
+      <div style="margin-top:6px;font-size:11px;color:var(--muted)">Get free at console.cloud.google.com → Credentials → API Key → restrict to Sheets API</div>
+    </div>
+    <button class="save-btn" onclick="saveConfig()">SAVE & LOAD</button>
+  </div>
+</div>
+<script>
+let SHEET_ID=localStorage.getItem('sc_sheet_id')||'';
+let API_KEY=localStorage.getItem('sc_api_key')||'';
+let currentTab='mlb';
+let allData={mlb:[],racing:[],history:[],stats:{}};
+
+function saveConfig(){
+  SHEET_ID=document.getElementById('sheetId').value.trim();
+  API_KEY=document.getElementById('apiKey').value.trim();
+  localStorage.setItem('sc_sheet_id',SHEET_ID);
+  localStorage.setItem('sc_api_key',API_KEY);
+  closeConfig();loadData();
+}
+function openConfig(){
+  document.getElementById('sheetId').value=SHEET_ID;
+  document.getElementById('apiKey').value=API_KEY;
+  document.getElementById('modalBg').classList.add('open');
+}
+function closeConfig(e){if(!e||e.target===document.getElementById('modalBg'))document.getElementById('modalBg').classList.remove('open');}
+
+async function fetchSheet(sheet,range){
+  const url=`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(sheet+'!'+range)}?key=${API_KEY}`;
+  const r=await fetch(url);if(!r.ok)throw new Error(`Sheet error ${r.status}`);
+  const d=await r.json();return d.values||[];
+}
+
+async function loadData(){
+  if(!SHEET_ID||!API_KEY){renderSetupPrompt();return;}
+  document.getElementById('refreshBtn').classList.add('spinning');
+  try{
+    const[mlbRows,racingRows,historyRows]=await Promise.all([
+      fetchSheet('Daily Summary','A4:L200'),
+      fetchSheet('Racing','A3:K200'),
+      fetchSheet('History','A5:K500'),
+    ]);
+    allData.mlb=mlbRows.map(r=>({date:r[0]||'',sport:r[1]||'MLB',team:r[2]||'',opponent:r[3]||'',winner:r[4]||'',score:r[5]||'',aiConf:parseInt(r[6])||0,blended:parseInt(r[7])||0,actual:r[8]||'',result:r[9]||'PENDING',time:r[11]||'TBD'}));
+    allData.racing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winner:r[2]||'',odds:r[3]||'',eachWay:r[4]||'',aiConf:parseInt(r[5])||0,actual:r[8]||'',result:r[9]||'PENDING',time:r[10]||''}));
+    allData.history=historyRows.map(r=>({date:r[0]||'',sport:r[1]||'',team:r[2]||'',opponent:r[3]||'',winner:r[4]||'',odds:r[5]||'',aiConf:parseInt(r[6])||0,actual:r[8]||'',result:r[9]||'PENDING'}));
+    const stats={};
+    allData.history.forEach(p=>{const s=p.sport||'ALL';if(!stats[s])stats[s]={correct:0,incorrect:0,pending:0};if(p.result==='CORRECT')stats[s].correct++;else if(p.result==='INCORRECT')stats[s].incorrect++;else stats[s].pending++;});
+    allData.stats=stats;
+    render();
+  }catch(e){renderError(e.message);}
+  finally{document.getElementById('refreshBtn').classList.remove('spinning');}
+}
+
+function confColor(p){return p>=70?'var(--green)':p>=45?'var(--amber)':'var(--red)';}
+function confClass(p){return p>=70?'high':p>=45?'medium':'low';}
+function badge(r){const u=(r||'').toUpperCase();if(u==='CORRECT')return'<span class="badge correct">✓ CORRECT</span>';if(u==='INCORRECT')return'<span class="badge incorrect">✗ WRONG</span>';return'<span class="badge pending">⏳ PENDING</span>';}
+
+function card(winner,sub,conf,result,time,odds,extra){
+  const cc=confClass(conf),col=confColor(conf);
+  const oddsStr=odds?`<span class="odds"> ${odds}</span>`:'';
+  const extraStr=extra?`<div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-family:'DM Mono',monospace">${extra}</div>`:'';
+  return`<div class="card ${cc}"><div class="card-sport">${sub}</div><div class="card-winner">${winner}${oddsStr}</div>${extraStr}<div class="card-meta"><div class="conf-bar-wrap"><div class="conf-label">CONFIDENCE</div><div class="conf-bar"><div class="conf-fill" style="width:${conf}%;background:${col}"></div></div></div><div class="conf-pct" style="color:${col}">${conf}%</div>${badge(result)}<div class="card-time">${time}</div></div></div>`;
+}
+
+function empty(icon,title,sub){return`<div class="empty"><div class="empty-icon">${icon}</div><div class="empty-title">${title}</div><div class="empty-sub">${sub}</div></div>`;}
+
+function renderMLB(){
+  const d=allData.mlb;if(!d.length)return empty('⚾','NO MLB TODAY',"Run the daily sweep to load today's predictions");
+  const high=d.filter(x=>x.blended>=70).length,med=d.filter(x=>x.blended>=45&&x.blended<70).length,low=d.filter(x=>x.blended<45).length;
+  let h=`<div class="stat-bar"><div class="stat"><div class="stat-val green">${high}</div><div class="stat-label">HIGH CONF</div></div><div class="stat"><div class="stat-val amber">${med}</div><div class="stat-label">MODERATE</div></div><div class="stat"><div class="stat-val red">${low}</div><div class="stat-label">LOW CONF</div></div></div><div class="section-header">TODAY'S PREDICTIONS</div>`;
+  d.forEach(x=>{const m=x.opponent?`${x.opponent} @ ${x.team}`:x.team;h+=card(x.winner,m,x.blended||x.aiConf,x.result,x.time,'',x.score);});
+  return h;
+}
+function renderRacing(){
+  const d=allData.racing;if(!d.length)return empty('🐎','NO RACES TODAY',"Run racing_sweep.bat to load today's race predictions");
+  const high=d.filter(x=>x.aiConf>=70).length,med=d.filter(x=>x.aiConf>=45&&x.aiConf<70).length;
+  let h=`<div class="stat-bar"><div class="stat"><div class="stat-val green">${high}</div><div class="stat-label">HIGH CONF</div></div><div class="stat"><div class="stat-val amber">${med}</div><div class="stat-label">MODERATE</div></div><div class="stat"><div class="stat-val">${d.length}</div><div class="stat-label">RACES</div></div></div><div class="section-header">TODAY'S RACES</div>`;
+  d.forEach(x=>{h+=card(x.winner,x.race,x.aiConf,x.result,x.time,x.odds,x.eachWay?`EW: ${x.eachWay}`:'');});
+  return h;
+}
+function renderHistory(){
+  const d=allData.history.slice().reverse().slice(0,50);if(!d.length)return empty('📋','NO HISTORY YET','Make some predictions to build your history');
+  let h='<div class="section-header">RECENT PREDICTIONS</div>';
+  d.forEach(x=>{const s=x.sport==='RACING'?x.team:(x.opponent?`${x.opponent} @ ${x.team}`:x.team);h+=card(x.winner,s,x.aiConf,x.result,x.date.slice(0,10),x.odds);});
+  return h;
+}
+function renderStats(){
+  const s=allData.stats;if(!Object.keys(s).length)return empty('📊','NO STATS YET','Log some results to see accuracy stats');
+  let h='<div class="section-header">ACCURACY BY SPORT</div>';
+  Object.entries(s).forEach(([sport,st])=>{
+    const tot=st.correct+st.incorrect,acc=tot>0?Math.round(st.correct/tot*100):0,col=acc>=50?'var(--green)':acc>=35?'var(--amber)':'var(--red)';
+    h+=`<div class="accuracy-card"><div class="accuracy-title">${sport}</div><div class="accuracy-row"><span>Accuracy</span><span class="accuracy-pct" style="color:${col}">${acc}%</span></div><div class="accuracy-row"><span>✓ Correct</span><span style="color:var(--green)">${st.correct}</span></div><div class="accuracy-row"><span>✗ Incorrect</span><span style="color:var(--red)">${st.incorrect}</span></div><div class="accuracy-row"><span>⏳ Pending</span><span style="color:var(--amber)">${st.pending}</span></div><div style="margin-top:10px"><div class="conf-bar" style="height:6px"><div class="conf-fill" style="width:${acc}%;background:${col}"></div></div></div></div>`;
+  });
+  let tc=0,ti=0,tp=0;Object.values(s).forEach(x=>{tc+=x.correct;ti+=x.incorrect;tp+=x.pending;});
+  const tot=tc+ti,oa=tot>0?Math.round(tc/tot*100):0,oc=oa>=50?'var(--green)':oa>=35?'var(--amber)':'var(--red)';
+  h+=`<div class="section-header">OVERALL</div><div class="stat-bar"><div class="stat"><div class="stat-val" style="color:${oc}">${oa}%</div><div class="stat-label">ACCURACY</div></div><div class="stat"><div class="stat-val green">${tc}</div><div class="stat-label">CORRECT</div></div><div class="stat"><div class="stat-val red">${ti}</div><div class="stat-label">WRONG</div></div></div>`;
+  return h;
+}
+function renderSetupPrompt(){document.getElementById('content').innerHTML=`<div style="padding:24px 0"><div class="empty"><div class="empty-icon">⚙️</div><div class="empty-title">SETUP REQUIRED</div><div class="empty-sub" style="margin-bottom:20px">Connect your Google Sheet to see predictions on your phone</div></div><div class="setup-hint" onclick="openConfig()">Tap here to enter your Google Sheets ID and API Key →</div></div>`;}
+function renderError(m){document.getElementById('content').innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-title">LOAD ERROR</div><div class="empty-sub">${m}<br><br>Check your Sheet ID and API Key in Setup</div></div>`;}
+function render(){let h='';if(currentTab==='mlb')h=renderMLB();else if(currentTab==='racing')h=renderRacing();else if(currentTab==='history')h=renderHistory();else if(currentTab==='stats')h=renderStats();document.getElementById('content').innerHTML=h;}
+function switchTab(tab,el,nav){
+  currentTab=tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');if(nav)nav.classList.add('active');render();
+}
+if(SHEET_ID&&API_KEY)loadData();else renderSetupPrompt();
+</script>
+</body>
+</html>

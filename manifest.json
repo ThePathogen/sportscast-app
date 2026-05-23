@@ -1,0 +1,41 @@
+{
+  "name": "SportsCast AI",
+  "short_name": "SportsCast",
+  "description": "AI Sports Predictions — MLB, Horse Racing & more",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#080c08",
+  "theme_color": "#080c08",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["sports", "entertainment"],
+  "shortcuts": [
+    {
+      "name": "Racing",
+      "short_name": "Racing",
+      "description": "Today's horse racing predictions",
+      "url": "/index.html#racing",
+      "icons": [{"src": "icon-192.png", "sizes": "192x192"}]
+    },
+    {
+      "name": "MLB",
+      "short_name": "MLB",
+      "description": "Today's MLB predictions",
+      "url": "/index.html#mlb",
+      "icons": [{"src": "icon-192.png", "sizes": "192x192"}]
+    }
+  ]
+}
