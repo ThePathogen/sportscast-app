@@ -206,16 +206,73 @@ function renderHistory(){
   d.forEach(x=>{const s=x.sport==='RACING'?x.team:(x.opponent?`${x.opponent} @ ${x.team}`:x.team);h+=card(x.winner,s,x.aiConf,x.result,x.date.slice(0,10),x.odds);});
   return h;
 }
+function calcPL(history){
+  const pl={total:0,bets:0,byConf:{"70%+":{pl:0,bets:0},"45-70%":{pl:0,bets:0},"<45%":{pl:0,bets:0}},bySport:{}};
+  history.forEach(p=>{
+    if(p.result!=='CORRECT'&&p.result!=='INCORRECT')return;
+    // Parse odds
+    let decimal=2.0;
+    const m=String(p.odds||'').match(/(\d+)\/(\d+)/);
+    if(m)decimal=parseInt(m[1])/parseInt(m[2])+1;
+    else if(/evs/i.test(p.odds||''))decimal=2.0;
+    const profit=p.result==='CORRECT'?parseFloat((decimal-1).toFixed(2)):-1.0;
+    pl.total+=profit;pl.bets++;
+    // By sport
+    const s=p.sport||'ALL';
+    if(!pl.bySport[s])pl.bySport[s]={pl:0,bets:0};
+    pl.bySport[s].pl+=profit;pl.bySport[s].bets++;
+    // By confidence
+    const cf=p.aiConf||0;
+    const band=cf>=70?"70%+":cf>=45?"45-70%":"<45%";
+    pl.byConf[band].pl+=profit;pl.byConf[band].bets++;
+  });
+  return pl;
+}
+
 function renderStats(){
   const s=allData.stats;if(!Object.keys(s).length)return empty('📊','NO STATS YET','Log some results to see accuracy stats');
-  let h='<div class="section-header">ACCURACY BY SPORT</div>';
+  const pl=calcPL(allData.history);
+  const plCol=pl.total>=0?'var(--green)':'var(--red)';
+  const roi=pl.bets>0?(pl.total/pl.bets*100):0;
+
+  let h='';
+
+  // P&L summary card
+  h+=`<div class="accuracy-card" style="border-color:${plCol}">
+    <div class="accuracy-title" style="color:${plCol}">💰 PROFIT & LOSS (£1 stake)</div>
+    <div class="accuracy-row"><span>Total P&L</span><span class="accuracy-pct" style="color:${plCol}">${pl.total>=0?'+':''}£${pl.total.toFixed(2)}</span></div>
+    <div class="accuracy-row"><span>ROI</span><span style="color:${plCol};font-family:'Bebas Neue',sans-serif;font-size:18px">${roi>=0?'+':''}${roi.toFixed(1)}%</span></div>
+    <div class="accuracy-row"><span>Total bets</span><span>${pl.bets}</span></div>`;
+
+  // By confidence band
+  Object.entries(pl.byConf).forEach(([band,bs])=>{
+    if(!bs.bets)return;
+    const bc=bs.pl>=0?'var(--green)':'var(--red)';
+    const broi=bs.pl/bs.bets*100;
+    h+=`<div class="accuracy-row"><span>${band}</span><span style="color:${bc}">${bs.pl>=0?'+':''}£${bs.pl.toFixed(2)} (${broi>=0?'+':''}${broi.toFixed(0)}% ROI)</span></div>`;
+  });
+  h+=`<div style="margin-top:10px"><div class="conf-bar" style="height:6px"><div class="conf-fill" style="width:${Math.min(Math.abs(roi),100)}%;background:${plCol}"></div></div></div></div>`;
+
+  h+='<div class="section-header">ACCURACY BY SPORT</div>';
   Object.entries(s).forEach(([sport,st])=>{
     const tot=st.correct+st.incorrect,acc=tot>0?Math.round(st.correct/tot*100):0,col=acc>=50?'var(--green)':acc>=35?'var(--amber)':'var(--red)';
-    h+=`<div class="accuracy-card"><div class="accuracy-title">${sport}</div><div class="accuracy-row"><span>Accuracy</span><span class="accuracy-pct" style="color:${col}">${acc}%</span></div><div class="accuracy-row"><span>✓ Correct</span><span style="color:var(--green)">${st.correct}</span></div><div class="accuracy-row"><span>✗ Incorrect</span><span style="color:var(--red)">${st.incorrect}</span></div><div class="accuracy-row"><span>⏳ Pending</span><span style="color:var(--amber)">${st.pending}</span></div><div style="margin-top:10px"><div class="conf-bar" style="height:6px"><div class="conf-fill" style="width:${acc}%;background:${col}"></div></div></div></div>`;
+    const sp=pl.bySport[sport]||{pl:0,bets:0};
+    const sc=sp.pl>=0?'var(--green)':'var(--red)';
+    h+=`<div class="accuracy-card"><div class="accuracy-title">${sport}</div>
+      <div class="accuracy-row"><span>Accuracy</span><span class="accuracy-pct" style="color:${col}">${acc}%</span></div>
+      <div class="accuracy-row"><span>P&L</span><span style="color:${sc}">${sp.pl>=0?'+':''}£${sp.pl.toFixed(2)}</span></div>
+      <div class="accuracy-row"><span>✓ Correct</span><span style="color:var(--green)">${st.correct}</span></div>
+      <div class="accuracy-row"><span>✗ Incorrect</span><span style="color:var(--red)">${st.incorrect}</span></div>
+      <div class="accuracy-row"><span>⏳ Pending</span><span style="color:var(--amber)">${st.pending}</span></div>
+      <div style="margin-top:10px"><div class="conf-bar" style="height:6px"><div class="conf-fill" style="width:${acc}%;background:${col}"></div></div></div></div>`;
   });
-  let tc=0,ti=0,tp=0;Object.values(s).forEach(x=>{tc+=x.correct;ti+=x.incorrect;tp+=x.pending;});
+  let tc=0,ti=0;Object.values(s).forEach(x=>{tc+=x.correct;ti+=x.incorrect;});
   const tot=tc+ti,oa=tot>0?Math.round(tc/tot*100):0,oc=oa>=50?'var(--green)':oa>=35?'var(--amber)':'var(--red)';
-  h+=`<div class="section-header">OVERALL</div><div class="stat-bar"><div class="stat"><div class="stat-val" style="color:${oc}">${oa}%</div><div class="stat-label">ACCURACY</div></div><div class="stat"><div class="stat-val green">${tc}</div><div class="stat-label">CORRECT</div></div><div class="stat"><div class="stat-val red">${ti}</div><div class="stat-label">WRONG</div></div></div>`;
+  h+=`<div class="section-header">OVERALL</div><div class="stat-bar">
+    <div class="stat"><div class="stat-val" style="color:${oc}">${oa}%</div><div class="stat-label">ACCURACY</div></div>
+    <div class="stat"><div class="stat-val" style="color:${plCol}">${pl.total>=0?'+':''}£${pl.total.toFixed(0)}</div><div class="stat-label">P&L</div></div>
+    <div class="stat"><div class="stat-val" style="color:${plCol}">${roi>=0?'+':''}${roi.toFixed(0)}%</div><div class="stat-label">ROI</div></div>
+  </div>`;
   return h;
 }
 function renderSetupPrompt(){document.getElementById('content').innerHTML=`<div style="padding:24px 0"><div class="empty"><div class="empty-icon">⚙️</div><div class="empty-title">SETUP REQUIRED</div><div class="empty-sub" style="margin-bottom:20px">Connect your Google Sheet to see predictions on your phone</div></div><div class="setup-hint" onclick="openConfig()">Tap here to enter your Google Sheets ID and API Key →</div></div>`;}
