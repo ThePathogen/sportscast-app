@@ -27,9 +27,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .refresh-btn:active{transform:scale(0.9);background:var(--green-dim)}
 .refresh-btn.spinning{animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.tabs{display:flex;gap:6px}
-.tab{flex:1;padding:7px 4px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;cursor:pointer;transition:all 0.2s;text-align:center}
-.tab.active{background:var(--green);color:var(--bg);border-color:var(--green);font-weight:500}
+
 .content{padding:14px 12px 90px}
 .stat-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
 .stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 8px;text-align:center}
@@ -94,12 +92,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
     <div class="logo">Sports<span>Cast</span> AI</div>
     <button class="refresh-btn" id="refreshBtn" onclick="loadData()">↻</button>
   </div>
-  <div class="tabs">
-    <button class="tab active" onclick="switchTab('mlb',this)">⚾ MLB</button>
-    <button class="tab" onclick="switchTab('racing',this)">🐎 RACING</button>
-    <button class="tab" onclick="switchTab('history',this)">📋 HISTORY</button>
-    <button class="tab" onclick="switchTab('stats',this)">📊 STATS</button>
-  </div>
+
 </div>
 <div class="content" id="content">
   <div class="loading"><div class="dot-pulse"><span></span><span></span><span></span></div> LOADING</div>
@@ -280,9 +273,9 @@ function renderError(m){document.getElementById('content').innerHTML=`<div class
 function render(){let h='';if(currentTab==='mlb')h=renderMLB();else if(currentTab==='racing')h=renderRacing();else if(currentTab==='history')h=renderHistory();else if(currentTab==='stats')h=renderStats();document.getElementById('content').innerHTML=h;}
 function switchTab(tab,el,nav){
   currentTab=tab;
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(t=>t.classList.remove('active'));
-  if(el)el.classList.add('active');if(nav)nav.classList.add('active');render();
+  if(nav)nav.classList.add('active');
+  render();
 }
 if(SHEET_ID&&API_KEY)loadData();else renderSetupPrompt();
 </script>
