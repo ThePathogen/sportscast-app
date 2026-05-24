@@ -279,7 +279,7 @@ function renderStats(){
       <div class="accuracy-row"><span>Accuracy</span><span class="accuracy-pct" style="color:${col}">${acc}%</span></div>
       <div class="accuracy-row"><span>✓ Correct</span><span style="color:var(--green)">${st.correct}</span></div>
       <div class="accuracy-row"><span>✗ Incorrect</span><span style="color:var(--red)">${st.incorrect}</span></div>
-      <div class="accuracy-row"><span>⏳ Pending</span><span style="color:var(--amber)">${st.pending}</span></div>
+
       <div style="margin-top:10px"><div class="conf-bar" style="height:6px"><div class="conf-fill" style="width:${acc}%;background:${col}"></div></div></div></div>`;
   });
   let tc=0,ti=0;Object.values(s).forEach(x=>{tc+=x.correct;ti+=x.incorrect;});
