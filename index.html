@@ -120,7 +120,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 let SHEET_ID=localStorage.getItem('sc_sheet_id')||'';
 let API_KEY=localStorage.getItem('sc_api_key')||'';
 let currentTab='mlb';
-let allData={mlb:[],racing:[],history:[],stats:{}};
+let allData={mlb:[],racing:[],history:[],stats:{},bets:[]};
 
 function saveConfig(){
   SHEET_ID=document.getElementById('sheetId').value.trim();
@@ -146,11 +146,13 @@ async function loadData(){
   if(!SHEET_ID||!API_KEY){renderSetupPrompt();return;}
   
   try{
-    const[mlbRows,racingRows,historyRows]=await Promise.all([
+    const[mlbRows,racingRows,historyRows,betsRows]=await Promise.all([
       fetchSheet('Daily Summary','A4:L200'),
       fetchSheet('Racing','A3:K200'),
       fetchSheet('History','A5:K500'),
+      fetchSheet('Bets','A2:I500').catch(()=>[]),
     ]);
+    allData.bets=betsRows;
     allData.mlb=mlbRows.map(r=>({date:r[0]||'',sport:r[1]||'MLB',team:r[2]||'',opponent:r[3]||'',winner:r[4]||'',score:r[5]||'',aiConf:parseInt(r[6])||0,blended:parseInt(r[7])||0,actual:r[8]||'',result:r[9]||'PENDING',time:r[11]||'TBD'}));
     allData.racing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winner:r[2]||'',odds:r[3]||'',eachWay:r[4]||'',aiConf:parseInt(r[5])||0,actual:r[8]||'',result:r[9]||'PENDING',time:r[10]||''}));
     allData.history=historyRows.map(r=>({date:r[0]||'',sport:r[1]||'',team:r[2]||'',opponent:r[3]||'',winner:r[4]||'',odds:r[5]||'',aiConf:parseInt(r[6])||0,actual:r[8]||'',result:r[9]||'PENDING'}));
@@ -218,38 +220,63 @@ function calcPL(history){
   return pl;
 }
 
-function renderStats(){
-  const s=allData.stats;if(!Object.keys(s).length)return empty('📊','NO STATS YET','Log some results to see accuracy stats');
-  const pl=calcPL(allData.history);
-  const plCol=pl.total>=0?'var(--green)':'var(--red)';
-  const roi=pl.bets>0?(pl.total/pl.bets*100):0;
+function calcBetsPL(bets){
+  // bets rows: date, sport, type, stake, legs, result, returns, pl, notes
+  const res={total:0,bets:0,racing:{pl:0,bets:0,won:0,lost:0},mlb:{pl:0,bets:0,won:0,lost:0},other:{pl:0,bets:0,won:0,lost:0}};
+  bets.forEach(r=>{
+    const sport=(r[1]||'').toUpperCase();
+    const pl=parseFloat((r[7]||'0').replace('£','').replace('+',''))||0;
+    const result=(r[5]||'').toLowerCase();
+    const key=sport==='RACING'?'racing':sport==='MLB'?'mlb':'other';
+    res.total+=pl; res.bets++;
+    res[key].pl+=pl; res[key].bets++;
+    if(result==='won'||result==='placed') res[key].won++;
+    else if(result==='lost') res[key].lost++;
+  });
+  return res;
+}
 
+function renderStats(){
+  const s=allData.stats;
+  const bpl=calcBetsPL(allData.bets);
+  const plCol=bpl.total>=0?'var(--green)':'var(--red)';
+  const roi=bpl.bets>0?(bpl.total/bpl.bets*100):0;
   let h='';
 
-  // P&L summary card
+  // Total P&L card
   h+=`<div class="accuracy-card" style="border-color:${plCol}">
-    <div class="accuracy-title" style="color:${plCol}">💰 PROFIT & LOSS (£1 stake)</div>
-    <div class="accuracy-row"><span>Total P&L</span><span class="accuracy-pct" style="color:${plCol}">${pl.total>=0?'+':''}£${pl.total.toFixed(2)}</span></div>
+    <div class="accuracy-title" style="color:${plCol}">💰 ACTUAL BETS — P&L</div>
+    <div class="accuracy-row"><span>Total P&L</span><span class="accuracy-pct" style="color:${plCol}">${bpl.total>=0?'+':''}£${bpl.total.toFixed(2)}</span></div>
     <div class="accuracy-row"><span>ROI</span><span style="color:${plCol};font-family:'Bebas Neue',sans-serif;font-size:18px">${roi>=0?'+':''}${roi.toFixed(1)}%</span></div>
-    <div class="accuracy-row"><span>Total bets</span><span>${pl.bets}</span></div>`;
+    <div class="accuracy-row"><span>Total bets</span><span>${bpl.bets}</span></div>
+    <div style="margin-top:10px"><div class="conf-bar" style="height:6px"><div class="conf-fill" style="width:${Math.min(Math.abs(roi),100)}%;background:${plCol}"></div></div></div>
+  </div>`;
 
-  // By confidence band
-  Object.entries(pl.byConf).forEach(([band,bs])=>{
-    if(!bs.bets)return;
-    const bc=bs.pl>=0?'var(--green)':'var(--red)';
-    const broi=bs.pl/bs.bets*100;
-    h+=`<div class="accuracy-row"><span>${band}</span><span style="color:${bc}">${bs.pl>=0?'+':''}£${bs.pl.toFixed(2)} (${broi>=0?'+':''}${broi.toFixed(0)}% ROI)</span></div>`;
+  // Sport split
+  h+='<div class="section-header">P&L BY SPORT</div>';
+  [['RACING','racing','🐎'],['MLB','mlb','⚾']].forEach(([label,key,icon])=>{
+    const sp=bpl[key];
+    if(!sp.bets)return;
+    const sc=sp.pl>=0?'var(--green)':'var(--red)';
+    const sroi=sp.bets>0?sp.pl/sp.bets*100:0;
+    h+=`<div class="accuracy-card">
+      <div class="accuracy-title">${icon} ${label}</div>
+      <div class="accuracy-row"><span>P&L</span><span class="accuracy-pct" style="color:${sc}">${sp.pl>=0?'+':''}£${sp.pl.toFixed(2)}</span></div>
+      <div class="accuracy-row"><span>ROI</span><span style="color:${sc}">${sroi>=0?'+':''}${sroi.toFixed(1)}%</span></div>
+      <div class="accuracy-row"><span>Total bets</span><span>${sp.bets}</span></div>
+      <div class="accuracy-row"><span>✓ Won/Placed</span><span style="color:var(--green)">${sp.won}</span></div>
+      <div class="accuracy-row"><span>✗ Lost</span><span style="color:var(--red)">${sp.lost}</span></div>
+    </div>`;
   });
-  h+=`<div style="margin-top:10px"><div class="conf-bar" style="height:6px"><div class="conf-fill" style="width:${Math.min(Math.abs(roi),100)}%;background:${plCol}"></div></div></div></div>`;
 
-  h+='<div class="section-header">ACCURACY BY SPORT</div>';
+  if(!Object.keys(s).length)return h+empty('📊','NO ACCURACY DATA YET','Log some results to see accuracy stats');
+
+  // Prediction accuracy
+  h+='<div class="section-header">PREDICTION ACCURACY</div>';
   Object.entries(s).forEach(([sport,st])=>{
     const tot=st.correct+st.incorrect,acc=tot>0?Math.round(st.correct/tot*100):0,col=acc>=50?'var(--green)':acc>=35?'var(--amber)':'var(--red)';
-    const sp=pl.bySport[sport]||{pl:0,bets:0};
-    const sc=sp.pl>=0?'var(--green)':'var(--red)';
     h+=`<div class="accuracy-card"><div class="accuracy-title">${sport}</div>
       <div class="accuracy-row"><span>Accuracy</span><span class="accuracy-pct" style="color:${col}">${acc}%</span></div>
-      <div class="accuracy-row"><span>P&L</span><span style="color:${sc}">${sp.pl>=0?'+':''}£${sp.pl.toFixed(2)}</span></div>
       <div class="accuracy-row"><span>✓ Correct</span><span style="color:var(--green)">${st.correct}</span></div>
       <div class="accuracy-row"><span>✗ Incorrect</span><span style="color:var(--red)">${st.incorrect}</span></div>
       <div class="accuracy-row"><span>⏳ Pending</span><span style="color:var(--amber)">${st.pending}</span></div>
@@ -259,7 +286,7 @@ function renderStats(){
   const tot=tc+ti,oa=tot>0?Math.round(tc/tot*100):0,oc=oa>=50?'var(--green)':oa>=35?'var(--amber)':'var(--red)';
   h+=`<div class="section-header">OVERALL</div><div class="stat-bar">
     <div class="stat"><div class="stat-val" style="color:${oc}">${oa}%</div><div class="stat-label">ACCURACY</div></div>
-    <div class="stat"><div class="stat-val" style="color:${plCol}">${pl.total>=0?'+':''}£${pl.total.toFixed(0)}</div><div class="stat-label">P&L</div></div>
+    <div class="stat"><div class="stat-val" style="color:${plCol}">${bpl.total>=0?'+':''}£${bpl.total.toFixed(0)}</div><div class="stat-label">BET P&L</div></div>
     <div class="stat"><div class="stat-val" style="color:${plCol}">${roi>=0?'+':''}${roi.toFixed(0)}%</div><div class="stat-label">ROI</div></div>
   </div>`;
   return h;
