@@ -23,10 +23,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .logo{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:3px;color:var(--green);text-shadow:0 0 20px rgba(45,255,122,0.3)}
 .logo span{color:var(--gold)}
-.refresh-btn{background:var(--border);border:1px solid var(--green-dim);color:var(--green);font-size:18px;width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
-.refresh-btn:active{transform:scale(0.9);background:var(--green-dim)}
-.refresh-btn.spinning{animation:spin 1s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
+
 
 .content{padding:14px 12px 90px}
 .stat-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
@@ -90,7 +87,6 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 <div class="header">
   <div class="header-top">
     <div class="logo">Sports<span>Cast</span> AI</div>
-    <button class="refresh-btn" id="refreshBtn" onclick="loadData()">↻</button>
   </div>
 
 </div>
@@ -148,7 +144,7 @@ async function fetchSheet(sheet,range){
 
 async function loadData(){
   if(!SHEET_ID||!API_KEY){renderSetupPrompt();return;}
-  document.getElementById('refreshBtn').classList.add('spinning');
+  
   try{
     const[mlbRows,racingRows,historyRows]=await Promise.all([
       fetchSheet('Daily Summary','A4:L200'),
@@ -163,7 +159,7 @@ async function loadData(){
     allData.stats=stats;
     render();
   }catch(e){renderError(e.message);}
-  finally{document.getElementById('refreshBtn').classList.remove('spinning');}
+  finally{}
 }
 
 function confColor(p){return p>=70?'var(--green)':p>=45?'var(--amber)':'var(--red)';}
