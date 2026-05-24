@@ -21,12 +21,7 @@
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
 .header{position:sticky;top:0;z-index:100;background:rgba(8,12,8,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:22px 16px 14px}
 .header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.logo{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:3px;color:var(--green);text-shadow:0 0 20px rgba(45,255,122,0.3)}
-.logo span{color:var(--gold)}
-
-
-.content{padding:14px 12px 90px}
-.stat-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:3px;color:var(--green);grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
 .stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 8px;text-align:center}
 .stat-val{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;line-height:1}
 .stat-val.green{color:var(--green)}.stat-val.amber{color:var(--amber)}.stat-val.red{color:var(--red)}
@@ -86,7 +81,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 <body>
 <div class="header">
   <div class="header-top">
-    <div class="logo">Sports<span>Cast</span></div>
+    <div class="logo">Sports<span style="color:#ffffff">Cast</span></div>
   </div>
 
 </div>
