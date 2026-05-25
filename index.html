@@ -182,7 +182,7 @@ function renderMLB(){
 function renderRacing(){
   const d=allData.racing;if(!d.length)return empty('🐎','NO RACES TODAY',"Run racing_sweep.bat to load today's race predictions");
   const high=d.filter(x=>x.aiConf>=70).length,med=d.filter(x=>x.aiConf>=45&&x.aiConf<70).length;
-  let h=`<div class="stat-bar"><div class="stat"><div class="stat-val green">${high}</div><div class="stat-label">HIGH CONF</div></div><div class="stat"><div class="stat-val amber">${med}</div><div class="stat-label">MODERATE</div></div><div class="stat"><div class="stat-val">${d.length}</div><div class="stat-label">RACES</div></div></div><div class="section-header">TODAY'S RACES</div>`;
+  let h=`<div class="stat-bar"><div class="stat"><div class="stat-val green">${high}</div><div class="stat-label">HIGH CONF</div></div><div class="stat"><div class="stat-val amber">${med}</div><div class="stat-label">MODERATE</div></div><div class="stat"><div class="stat-val red">${low}</div><div class="stat-label">LOW CONF</div></div></div><div class="section-header">TODAY'S RACES</div>`;
   d.forEach(x=>{h+=card(x.winner,x.race,x.aiConf,x.result,x.time,x.odds,x.eachWay?`EW: ${x.eachWay}`:'');});
   return h;
 }
