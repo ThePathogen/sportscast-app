@@ -2,300 +2,244 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#080c08">
-<title>SportsCast AI</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>TradeWise</title>
 <link rel="manifest" href="manifest.json">
-<link rel="icon" href="favicon.ico">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg:#080c08;--surface:#0f140f;--card:#141a14;--border:#1e2a1e;
-  --green:#2dff7a;--green-dim:#1a9947;--amber:#ffb830;--red:#ff3d3d;
-  --text:#e8f0e8;--muted:#5a7a5a;--gold:#d4a843;
-}
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;padding-bottom:120px}
-.header{position:sticky;top:0;z-index:100;background:rgba(8,12,8,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:22px 16px 14px}
-.header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.logo{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:3px;color:var(--green);grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
-.stat-bar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px}.stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 8px;text-align:center}
-.stat-val{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;line-height:1}
-.stat-val.green{color:var(--green)}.stat-val.amber{color:var(--amber)}.stat-val.red{color:var(--red)}
-.stat-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;margin-top:3px}
-.section-header{display:flex;align-items:center;gap:8px;margin:16px 0 8px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase}
-.section-header::after{content:'';flex:1;height:1px;background:var(--border)}
-.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;position:relative;overflow:hidden;transition:transform 0.15s}
-.card:active{transform:scale(0.98)}
-.card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:12px 0 0 12px}
-.card.high::before{background:var(--green)}.card.medium::before{background:var(--amber)}.card.low::before{background:var(--red)}
-.card-sport{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted);margin-bottom:4px}
-.card-winner{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:var(--text);line-height:1.1;margin-bottom:10px}
-.card-winner .odds{font-family:'DM Mono',monospace;font-size:14px;color:var(--gold);font-weight:400}
-.card-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.conf-bar-wrap{flex:1;min-width:80px}
-.conf-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:3px}
-.conf-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
-.conf-fill{height:100%;border-radius:2px;transition:width 0.6s ease}
-.conf-pct{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;min-width:44px;text-align:right}
-.badge{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;padding:3px 7px;border-radius:20px;border:1px solid}
-.badge.pending{color:var(--amber);border-color:var(--amber);background:rgba(255,184,48,0.08)}
-.badge.correct{color:var(--green);border-color:var(--green);background:rgba(45,255,122,0.08)}
-.badge.incorrect{color:var(--red);border-color:var(--red);background:rgba(255,61,61,0.08)}
-.card-time{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-left:auto}
-.empty{text-align:center;padding:48px 24px;color:var(--muted)}
-.empty-icon{font-size:48px;margin-bottom:12px}
-.empty-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;margin-bottom:6px}
-.empty-sub{font-size:13px;line-height:1.5}
-.loading{display:flex;align-items:center;justify-content:center;gap:8px;padding:32px;color:var(--muted);font-family:'DM Mono',monospace;font-size:12px;letter-spacing:1px}
-.dot-pulse{display:flex;gap:4px}
-.dot-pulse span{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.2s ease-in-out infinite}
-.dot-pulse span:nth-child(2){animation-delay:0.2s}.dot-pulse span:nth-child(3){animation-delay:0.4s}
-@keyframes pulse{0%,80%,100%{opacity:0.2}40%{opacity:1}}
-.accuracy-card{background:linear-gradient(135deg,var(--card) 0%,rgba(45,255,122,0.05) 100%);border:1px solid var(--green-dim);border-radius:12px;padding:16px;margin-bottom:14px}
-.accuracy-title{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--green);margin-bottom:10px}
-.accuracy-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border);font-size:13px}
-.accuracy-row:last-child{border-bottom:none}
-.accuracy-pct{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px}
-.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:200;backdrop-filter:blur(4px)}
-.modal-bg.open{display:flex;align-items:flex-end}
-.modal{background:var(--surface);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:20px 16px 40px;width:100%;max-height:70vh;overflow-y:auto}
-.modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
-.modal-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--green);margin-bottom:16px}
-.input-group{margin-bottom:14px}
-.input-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--muted);margin-bottom:6px;display:block}
-.input-field{width:100%;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none}
-.input-field:focus{border-color:var(--green-dim)}
-.save-btn{width:100%;background:var(--green);color:var(--bg);border:none;border-radius:10px;padding:14px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;cursor:pointer;margin-top:8px}
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(8,12,8,0.95);backdrop-filter:blur(12px);border-top:1px solid var(--border);display:flex;padding:8px 0 20px}
-.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px 0;transition:all 0.2s}
-.nav-icon{font-size:20px}
-.nav-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--muted)}
-.nav-item.active .nav-label{color:var(--green)}
-.setup-hint{background:rgba(212,168,67,0.1);border:1px solid var(--gold);border-radius:10px;padding:12px;font-size:13px;color:var(--gold);text-align:center;cursor:pointer}
+:root{--green:#2dff7a;--green-dim:#1a3d2a;--amber:#f0a500;--red:#ff4d4d;--blue:#4da6ff;--bg:#080c08;--card:#0f150f;--border:#1a2e1a;--text:#e8f5e8;--muted:#4a6b4a;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'DM Mono','Courier New',monospace;min-height:100vh;padding-bottom:120px;}
+.header{position:sticky;top:0;z-index:100;background:rgba(8,12,8,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:22px 16px 14px;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;color:var(--green);}
+.logo span{color:var(--text);}
+
+.content{padding:16px;}
+.section-header{font-size:10px;letter-spacing:2px;color:var(--muted);margin:16px 0 8px;}
+.signal-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:10px;}
+.signal-card.long{border-left:3px solid var(--green);}
+.signal-card.short{border-left:3px solid var(--red);}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.instrument{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;}
+.bias-badge{font-size:10px;letter-spacing:2px;padding:3px 10px;border-radius:4px;}
+.bias-badge.long{background:rgba(45,255,122,0.15);color:var(--green);border:1px solid rgba(45,255,122,0.3);}
+.bias-badge.short{background:rgba(255,77,77,0.15);color:var(--red);border:1px solid rgba(255,77,77,0.3);}
+.card-row{display:flex;justify-content:space-between;margin-bottom:6px;}
+.card-label{font-size:10px;color:var(--muted);letter-spacing:1px;}
+.conf-bar{background:var(--border);border-radius:2px;height:4px;margin-top:10px;}
+.conf-fill{height:100%;border-radius:2px;}
+.price-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0;}
+.price-box{background:rgba(255,255,255,0.03);border-radius:6px;padding:8px;}
+.price-label{font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:3px;}
+.price-value{font-size:13px;font-weight:500;}
+.stat-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.pill{font-size:10px;padding:3px 8px;border-radius:12px;background:rgba(255,255,255,0.05);color:var(--muted);border:1px solid var(--border);}
+.pill.up{color:var(--green);border-color:rgba(45,255,122,0.2);}
+.pill.down{color:var(--red);border-color:rgba(255,77,77,0.2);}
+.pill.warn{color:var(--amber);border-color:rgba(240,165,0,0.2);}
+.ai-box{background:rgba(45,255,122,0.05);border:1px solid rgba(45,255,122,0.15);border-radius:6px;padding:10px;margin-top:10px;font-size:11px;line-height:1.6;}
+.ai-label{font-size:9px;color:var(--green);letter-spacing:2px;margin-bottom:6px;}
+.summary-bar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;}
+.summary-stat{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;}
+.summary-val{font-family:'Bebas Neue',sans-serif;font-size:28px;}
+.summary-label{font-size:9px;letter-spacing:1px;color:var(--muted);}
+.nav{position:fixed;bottom:0;left:0;right:0;background:rgba(8,12,8,0.97);border-top:1px solid var(--border);display:flex;padding:8px 0 16px;}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:9px;letter-spacing:1px;color:var(--muted);background:none;border:none;cursor:pointer;padding:6px;}
+.nav-btn.active{color:var(--green);}
+.nav-icon{font-size:20px;}
+.empty{text-align:center;padding:60px 20px;color:var(--muted);}
+.empty-icon{font-size:48px;margin-bottom:16px;}
+.empty-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;margin-bottom:8px;color:var(--text);}
+.setup-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:12px;}
+.setup-label{font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:8px;}
+.setup-input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:6px;font-family:'DM Mono',monospace;font-size:12px;}
+.setup-btn{width:100%;background:var(--green-dim);border:1px solid var(--green);color:var(--green);padding:12px;border-radius:6px;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:2px;cursor:pointer;margin-top:8px;}
+.history-row{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+.history-instrument{font-family:'Bebas Neue',sans-serif;font-size:16px;}
+.history-date{font-size:10px;color:var(--muted);margin-top:2px;}
+.result-badge{font-size:10px;padding:3px 8px;border-radius:4px;}
+.result-badge.correct{background:rgba(45,255,122,0.15);color:var(--green);}
+.result-badge.incorrect{background:rgba(255,77,77,0.15);color:var(--red);}
+.result-badge.pending{background:rgba(240,165,0,0.15);color:var(--amber);}
 </style>
 </head>
 <body>
-<div class="header">
-  <div class="header-top">
-    <div class="logo">Sports<span style="color:#ffffff">Cast</span></div>
-  </div>
+<div class="header"><div class="logo">Trade<span>Wise</span></div></div>
 
+<div class="content" id="mainContent">
+  <div class="empty"><div class="empty-icon">📊</div><div class="empty-title">LOADING SIGNALS</div><div style="font-size:12px">Fetching from Google Sheets...</div></div>
 </div>
-<div class="content" id="content">
-  <div class="loading"><div class="dot-pulse"><span></span><span></span><span></span></div> LOADING</div>
-</div>
-<div class="bottom-nav">
-  <div class="nav-item active" onclick="switchTab('mlb',null,this)"><div class="nav-icon">⚾</div><div class="nav-label">MLB</div></div>
-  <div class="nav-item" onclick="switchTab('racing',null,this)"><div class="nav-icon">🐎</div><div class="nav-label">RACING</div></div>
-  <div class="nav-item" onclick="switchTab('history',null,this)"><div class="nav-icon">📋</div><div class="nav-label">HISTORY</div></div>
-  <div class="nav-item" onclick="switchTab('stats',null,this)"><div class="nav-icon">📊</div><div class="nav-label">STATS</div></div>
-  <div class="nav-item" onclick="openConfig()"><div class="nav-icon">⚙️</div><div class="nav-label">SETUP</div></div>
-</div>
-<div class="modal-bg" id="modalBg" onclick="closeConfig(event)">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Setup</div>
-    <div class="input-group">
-      <label class="input-label">GOOGLE SHEETS ID</label>
-      <input class="input-field" id="sheetId" placeholder="Paste your Sheet ID here…">
-    </div>
-    <div class="input-group">
-      <label class="input-label">GOOGLE SHEETS API KEY</label>
-      <input class="input-field" id="apiKey" placeholder="AIza…">
-      <div style="margin-top:6px;font-size:11px;color:var(--muted)">Get free at console.cloud.google.com → Credentials → API Key → restrict to Sheets API</div>
-    </div>
-    <button class="save-btn" onclick="saveConfig()">SAVE & LOAD</button>
-  </div>
-</div>
+<nav class="nav">
+  <button class="nav-btn active" onclick="showTab('long')"><span class="nav-icon">📈</span>LONG</button>
+  <button class="nav-btn" onclick="showTab('short')"><span class="nav-icon">📉</span>SHORT</button>
+  <button class="nav-btn" onclick="showTab('history')"><span class="nav-icon">📋</span>HISTORY</button>
+  <button class="nav-btn" onclick="showTab('stats')"><span class="nav-icon">📊</span>STATS</button>
+  <button class="nav-btn" onclick="showTab('setup')"><span class="nav-icon">⚙️</span>SETUP</button>
+</nav>
 <script>
-let SHEET_ID=localStorage.getItem('sc_sheet_id')||'';
-let API_KEY=localStorage.getItem('sc_api_key')||'';
-let currentTab='mlb';
-let allData={mlb:[],racing:[],history:[],stats:{},bets:[]};
-
-function saveConfig(){
-  SHEET_ID=document.getElementById('sheetId').value.trim();
-  API_KEY=document.getElementById('apiKey').value.trim();
-  localStorage.setItem('sc_sheet_id',SHEET_ID);
-  localStorage.setItem('sc_api_key',API_KEY);
-  closeConfig();loadData();
+const SID='tw_sheet_id',AID='tw_api_key';
+let allData={signals:[],history:[]},currentTab='long';
+function getCfg(){return{sheetId:localStorage.getItem(SID)||'',apiKey:localStorage.getItem(AID)||''};}
+async function fetchSheet(tab,range){
+  const{sheetId,apiKey}=getCfg();if(!sheetId||!apiKey)return[];
+  try{const r=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(tab+'!'+range)}?key=${apiKey}`);const d=await r.json();return d.values||[];}catch(e){return[];}
 }
-function openConfig(){
-  document.getElementById('sheetId').value=SHEET_ID;
-  document.getElementById('apiKey').value=API_KEY;
-  document.getElementById('modalBg').classList.add('open');
-}
-function closeConfig(e){if(!e||e.target===document.getElementById('modalBg'))document.getElementById('modalBg').classList.remove('open');}
-
-async function fetchSheet(sheet,range){
-  const url=`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(sheet+'!'+range)}?key=${API_KEY}`;
-  const r=await fetch(url);if(!r.ok)throw new Error(`Sheet error ${r.status}`);
-  const d=await r.json();return d.values||[];
-}
-
 async function loadData(){
-  if(!SHEET_ID||!API_KEY){renderSetupPrompt();return;}
-  
-  try{
-    const[mlbRows,racingRows,historyRows,betsRows]=await Promise.all([
-      fetchSheet('Daily Summary','A4:L200'),
-      fetchSheet('Racing','A3:K200'),
-      fetchSheet('History','A5:K500'),
-      fetchSheet('Bets','A2:I500').catch(()=>[]),
-    ]);
-    allData.bets=betsRows;
-    allData.mlb=mlbRows.map(r=>({date:r[0]||'',sport:r[1]||'MLB',team:r[2]||'',opponent:r[3]||'',winner:r[4]||'',score:r[5]||'',aiConf:parseInt(r[6])||0,blended:parseInt(r[7])||0,actual:r[8]||'',result:r[9]||'PENDING',time:r[11]||'TBD'}));
-    allData.racing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winner:r[2]||'',odds:r[3]||'',eachWay:r[4]||'',aiConf:parseInt(r[5])||0,actual:r[8]||'',result:r[9]||'PENDING',time:r[10]||''}));
-    allData.history=historyRows.map(r=>({date:r[0]||'',sport:r[1]||'',team:r[2]||'',opponent:r[3]||'',winner:r[4]||'',odds:r[5]||'',aiConf:parseInt(r[6])||0,actual:r[8]||'',result:r[9]||'PENDING'}));
-    const stats={};
-    allData.history.forEach(p=>{const s=p.sport||'ALL';if(!stats[s])stats[s]={correct:0,incorrect:0,pending:0};if(p.result==='CORRECT')stats[s].correct++;else if(p.result==='INCORRECT')stats[s].incorrect++;else stats[s].pending++;});
-    allData.stats=stats;
-    render();
-  }catch(e){renderError(e.message);}
-  finally{}
+  const{sheetId,apiKey}=getCfg();if(!sheetId||!apiKey){showTab('setup');return;}
+  const[sigRows,histRows]=await Promise.all([fetchSheet('Signals','A2:P200'),fetchSheet('Signal Log','A2:N500')]);
+  allData.signals=sigRows.map(r=>({instrument:r[0]||'',bias:r[1]||'',estMove:r[2]||'',startPrice:r[3]||'N/A',endPrice:r[4]||'N/A',stopLoss:r[5]||'N/A',takeProfit:r[6]||'N/A',timeframe:r[7]||'',confidence:r[8]||'50%',histConf:r[9]||'',trend:r[10]||'',rsi:r[11]||'',cot:r[12]||'',season:r[13]||'',news:r[14]||'',aiAnalysis:r[15]||''}));
+  allData.history=histRows.map(r=>({date:r[0]||'',instrument:r[1]||'',bias:r[2]||'',result:r[3]||'PENDING',entry:r[4]||'',sl:r[5]||'',tp:r[6]||'',conf:r[7]||''}));
+  showTab(currentTab);
 }
-
-function confColor(p){return p>=70?'var(--green)':p>=45?'var(--amber)':'var(--red)';}
-function confClass(p){return p>=70?'high':p>=45?'medium':'low';}
-function badge(r){const u=(r||'').toUpperCase();if(u==='CORRECT')return'<span class="badge correct">✓ CORRECT</span>';if(u==='INCORRECT')return'<span class="badge incorrect">✗ WRONG</span>';return'';}
-
-function card(winner,sub,conf,result,time,odds,extra){
-  const cc=confClass(conf),col=confColor(conf);
-  const oddsStr=odds?`<span class="odds"> ${odds}</span>`:'';
-  const extraStr=extra?`<div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-family:'DM Mono',monospace">${extra}</div>`:'';
-  return`<div class="card ${cc}"><div class="card-sport">${sub}</div><div class="card-winner">${winner}${oddsStr}</div>${extraStr}<div class="card-meta"><div class="conf-bar-wrap"><div class="conf-label">CONFIDENCE</div><div class="conf-bar"><div class="conf-fill" style="width:${conf}%;background:${col}"></div></div></div><div class="conf-pct" style="color:${col}">${conf}%</div>${badge(result)}<div class="card-time">${time}</div></div></div>`;
-}
-
-function empty(icon,title,sub){return`<div class="empty"><div class="empty-icon">${icon}</div><div class="empty-title">${title}</div><div class="empty-sub">${sub}</div></div>`;}
-
-function renderMLB(){
-  const d=allData.mlb;if(!d.length)return empty('⚾','NO MLB TODAY',"Run the daily sweep to load today's predictions");
-  const high=d.filter(x=>x.blended>=70).length,med=d.filter(x=>x.blended>=45&&x.blended<70).length,low=d.filter(x=>x.blended<45).length;
-  let h=`<div class="stat-bar"><div class="stat"><div class="stat-val green">${high}</div><div class="stat-label">HIGH CONF</div></div><div class="stat"><div class="stat-val amber">${med}</div><div class="stat-label">MODERATE</div></div><div class="stat"><div class="stat-val red">${low}</div><div class="stat-label">LOW CONF</div></div></div><div class="section-header">TODAY'S PREDICTIONS</div>`;
-  d.forEach(x=>{const m=x.opponent?`${x.opponent} @ ${x.team}`:x.team;h+=card(x.winner,m,x.blended||x.aiConf,x.result,x.time,'',x.score);});
-  return h;
-}
-function renderRacing(){
-  const d=allData.racing;if(!d.length)return empty('🐎','NO RACES TODAY',"Run racing_sweep.bat to load today's race predictions");
-  const high=d.filter(x=>x.aiConf>=70).length,med=d.filter(x=>x.aiConf>=45&&x.aiConf<70).length;
-  let h=`<div class="stat-bar"><div class="stat"><div class="stat-val green">${high}</div><div class="stat-label">HIGH CONF</div></div><div class="stat"><div class="stat-val amber">${med}</div><div class="stat-label">MODERATE</div></div><div class="stat"><div class="stat-val">${d.length}</div><div class="stat-label">RACES</div></div></div><div class="section-header">TODAY'S RACES</div>`;
-  d.forEach(x=>{h+=card(x.winner,x.race,x.aiConf,x.result,x.time,x.odds,x.eachWay?`EW: ${x.eachWay}`:'');});
-  return h;
-}
-function renderHistory(){
-  const d=allData.history.slice().reverse().slice(0,50);if(!d.length)return empty('📋','NO HISTORY YET','Make some predictions to build your history');
-  let h='<div class="section-header">RECENT PREDICTIONS</div>';
-  d.forEach(x=>{const s=x.sport==='RACING'?x.team:(x.opponent?`${x.opponent} @ ${x.team}`:x.team);h+=card(x.winner,s,x.aiConf,x.result,x.date.slice(0,10),x.odds);});
-  return h;
-}
-function calcPL(history){
-  const pl={total:0,bets:0,byConf:{"70%+":{pl:0,bets:0},"45-70%":{pl:0,bets:0},"<45%":{pl:0,bets:0}},bySport:{}};
-  history.forEach(p=>{
-    if(p.result!=='CORRECT'&&p.result!=='INCORRECT')return;
-    // Parse odds
-    let decimal=2.0;
-    const m=String(p.odds||'').match(/(\d+)\/(\d+)/);
-    if(m)decimal=parseInt(m[1])/parseInt(m[2])+1;
-    else if(/evs/i.test(p.odds||''))decimal=2.0;
-    const profit=p.result==='CORRECT'?parseFloat((decimal-1).toFixed(2)):-1.0;
-    pl.total+=profit;pl.bets++;
-    // By sport
-    const s=p.sport||'ALL';
-    if(!pl.bySport[s])pl.bySport[s]={pl:0,bets:0};
-    pl.bySport[s].pl+=profit;pl.bySport[s].bets++;
-    // By confidence
-    const cf=p.aiConf||0;
-    const band=cf>=70?"70%+":cf>=45?"45-70%":"<45%";
-    pl.byConf[band].pl+=profit;pl.byConf[band].bets++;
-  });
-  return pl;
-}
-
-function calcBetsPL(bets){
-  // bets rows: date, sport, type, stake, legs, result, returns, pl, notes
-  const res={total:0,bets:0,racing:{pl:0,bets:0,won:0,lost:0},mlb:{pl:0,bets:0,won:0,lost:0},other:{pl:0,bets:0,won:0,lost:0}};
-  bets.forEach(r=>{
-    const sport=(r[1]||'').toUpperCase();
-    const pl=parseFloat((r[7]||'0').replace('£','').replace('+',''))||0;
-    const result=(r[5]||'').toLowerCase();
-    const key=sport==='RACING'?'racing':sport==='MLB'?'mlb':'other';
-    res.total+=pl; res.bets++;
-    res[key].pl+=pl; res[key].bets++;
-    if(result==='won'||result==='placed') res[key].won++;
-    else if(result==='lost') res[key].lost++;
-  });
-  return res;
-}
-
-function renderStats(){
-  const s=allData.stats;
-  const bpl=calcBetsPL(allData.bets);
-  const plCol=bpl.total>=0?'var(--green)':'var(--red)';
-  const roi=bpl.bets>0?(bpl.total/bpl.bets*100):0;
-  let h='';
-
-  // Total P&L card
-  h+=`<div class="accuracy-card" style="border-color:${plCol}">
-    <div class="accuracy-title" style="color:${plCol}">💰 ACTUAL BETS — P&L</div>
-    <div class="accuracy-row"><span>Total P&L</span><span class="accuracy-pct" style="color:${plCol}">${bpl.total>=0?'+':''}£${bpl.total.toFixed(2)}</span></div>
-    <div class="accuracy-row"><span>ROI</span><span style="color:${plCol};font-family:'Bebas Neue',sans-serif;font-size:18px">${roi>=0?'+':''}${roi.toFixed(1)}%</span></div>
-    <div class="accuracy-row"><span>Total bets</span><span>${bpl.bets}</span></div>
-    <div style="margin-top:10px"><div class="conf-bar" style="height:6px"><div class="conf-fill" style="width:${Math.min(Math.abs(roi),100)}%;background:${plCol}"></div></div></div>
+function confColor(c){const n=parseInt(c)||50;return n>=70?'var(--green)':n>=55?'var(--amber)':'var(--red)';}
+function renderCard(s){
+  const isL=s.bias==='LONG',cls=isL?'long':'short',conf=parseInt(s.confidence)||50,col=confColor(s.confidence);
+  const rsiCls=s.rsi.includes('OB')?'warn':s.rsi.includes('OS')?'up':'';
+  const trendCls=s.trend==='Up'?'up':s.trend==='Down'?'down':'';
+  const seasonCls=s.season==='Fav'?'up':s.season==='Unf'?'down':'';
+  const cotV=parseFloat(s.cot)||0,cotCls=cotV>0.2?'up':cotV<-0.2?'down':'';
+  const aiHtml=s.aiAnalysis&&s.aiAnalysis.length>10?`<div class="ai-box"><div class="ai-label">AI ANALYSIS</div>${s.aiAnalysis}</div>`:'';
+  return`<div class="signal-card ${cls}">
+    <div class="card-header"><div class="instrument">${s.instrument}</div><div class="bias-badge ${cls}">${s.bias}</div></div>
+    <div class="card-row"><span class="card-label">CONFIDENCE</span><span style="color:${col}">${s.confidence}</span></div>
+    <div class="conf-bar"><div class="conf-fill" style="width:${conf}%;background:${col}"></div></div>
+    <div class="price-grid">
+      <div class="price-box"><div class="price-label">ENTRY</div><div class="price-value" style="color:var(--text)">${s.startPrice}</div></div>
+      <div class="price-box"><div class="price-label">PROJECTED</div><div class="price-value" style="color:var(--amber)">${s.endPrice} <span style="font-size:10px;color:var(--muted)">${s.estMove}</span></div></div>
+      <div class="price-box"><div class="price-label">STOP LOSS</div><div class="price-value" style="color:var(--red)">${s.stopLoss}</div></div>
+      <div class="price-box"><div class="price-label">TAKE PROFIT</div><div class="price-value" style="color:var(--green)">${s.takeProfit}</div></div>
+    </div>
+    <div class="stat-pills">
+      <span class="pill">⏱ ${s.timeframe}</span>
+      <span class="pill ${trendCls}">TREND ${s.trend}</span>
+      <span class="pill ${rsiCls}">RSI ${s.rsi}</span>
+      <span class="pill ${cotCls}">COT ${s.cot}</span>
+      <span class="pill ${seasonCls}">SEASON ${s.season}</span>
+      <span class="pill">NEWS ${s.news}</span>
+    </div>
+    ${aiHtml}
+    <div style="font-size:10px;color:var(--muted);margin-top:8px;text-align:right">${s.histConf}</div>
   </div>`;
+}
+function renderStats(){
+  const history = allData.history;
+  if(!history.length) return `<div class="empty"><div class="empty-icon">📊</div><div class="empty-title">NO DATA YET</div><div style="font-size:12px">Stats build up after signals are checked</div></div>`;
 
-  // Sport split
-  h+='<div class="section-header">P&L BY SPORT</div>';
-  [['RACING','racing','🐎'],['MLB','mlb','⚾']].forEach(([label,key,icon])=>{
-    const sp=bpl[key];
-    if(!sp.bets)return;
-    const sc=sp.pl>=0?'var(--green)':'var(--red)';
-    const sroi=sp.bets>0?sp.pl/sp.bets*100:0;
-    h+=`<div class="accuracy-card">
-      <div class="accuracy-title">${icon} ${label}</div>
-      <div class="accuracy-row"><span>P&L</span><span class="accuracy-pct" style="color:${sc}">${sp.pl>=0?'+':''}£${sp.pl.toFixed(2)}</span></div>
-      <div class="accuracy-row"><span>ROI</span><span style="color:${sc}">${sroi>=0?'+':''}${sroi.toFixed(1)}%</span></div>
-      <div class="accuracy-row"><span>Total bets</span><span>${sp.bets}</span></div>
-      <div class="accuracy-row"><span>✓ Won/Placed</span><span style="color:var(--green)">${sp.won}</span></div>
-      <div class="accuracy-row"><span>✗ Lost</span><span style="color:var(--red)">${sp.lost}</span></div>
+  // Group by instrument
+  const instruments = {};
+  history.forEach(r => {
+    if(!r.instrument || r.instrument.length < 2) return;
+    if(!instruments[r.instrument]) instruments[r.instrument] = {wins:0,losses:0,total:0,longWins:0,longTotal:0,shortWins:0,shortTotal:0};
+    const s = instruments[r.instrument];
+    if(r.result === 'CORRECT'){ s.wins++; s.total++; }
+    else if(r.result === 'INCORRECT'){ s.losses++; s.total++; }
+    else return; // skip pending
+    if(r.bias === 'LONG'){ s.longTotal++; if(r.result==='CORRECT') s.longWins++; }
+    else if(r.bias === 'SHORT'){ s.shortTotal++; if(r.result==='CORRECT') s.shortWins++; }
+  });
+
+  const sorted = Object.entries(instruments)
+    .filter(([,s]) => s.total > 0)
+    .sort((a,b) => (b[1].wins/b[1].total) - (a[1].wins/a[1].total));
+
+  if(!sorted.length) return `<div class="empty"><div class="empty-icon">📊</div><div class="empty-title">NO RESULTS YET</div><div style="font-size:12px">Results get checked automatically each morning</div></div>`;
+
+  // Overall stats
+  const totalWins = sorted.reduce((a,[,s])=>a+s.wins,0);
+  const totalAll  = sorted.reduce((a,[,s])=>a+s.total,0);
+  const overallPct = totalAll > 0 ? Math.round(totalWins/totalAll*100) : 0;
+  const overallCol = overallPct>=60?'var(--green)':overallPct>=45?'var(--amber)':'var(--red)';
+
+  let h = `<div class="summary-bar">
+    <div class="summary-stat"><div class="summary-val" style="color:${overallCol}">${overallPct}%</div><div class="summary-label">WIN RATE</div></div>
+    <div class="summary-stat"><div class="summary-val" style="color:var(--green)">${totalWins}</div><div class="summary-label">WINS</div></div>
+    <div class="summary-stat"><div class="summary-val" style="color:var(--red)">${totalAll-totalWins}</div><div class="summary-label">LOSSES</div></div>
+  </div><div class="section-header">WIN RATE BY INSTRUMENT</div>`;
+
+  sorted.forEach(([name, s]) => {
+    const pct = Math.round(s.wins/s.total*100);
+    const col = pct>=60?'var(--green)':pct>=45?'var(--amber)':'var(--red)';
+    const longPct = s.longTotal>0?Math.round(s.longWins/s.longTotal*100):null;
+    const shortPct = s.shortTotal>0?Math.round(s.shortWins/s.shortTotal*100):null;
+
+    h += `<div class="signal-card" style="border-left:3px solid ${col}">
+      <div class="card-header">
+        <div class="instrument">${name}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:${col}">${pct}%</div>
+      </div>
+      <div class="conf-bar"><div class="conf-fill" style="width:${pct}%;background:${col}"></div></div>
+      <div style="display:flex;gap:12px;margin-top:10px">
+        <div style="flex:1;text-align:center">
+          <div style="font-size:10px;color:var(--muted);letter-spacing:1px">TOTAL</div>
+          <div style="font-size:16px">${s.wins}/${s.total}</div>
+        </div>
+        ${longPct!==null?`<div style="flex:1;text-align:center">
+          <div style="font-size:10px;color:var(--green);letter-spacing:1px">LONG</div>
+          <div style="font-size:16px;color:var(--green)">${longPct}%</div>
+        </div>`:''}
+        ${shortPct!==null?`<div style="flex:1;text-align:center">
+          <div style="font-size:10px;color:var(--red);letter-spacing:1px">SHORT</div>
+          <div style="font-size:16px;color:var(--red)">${shortPct}%</div>
+        </div>`:''}
+      </div>
     </div>`;
   });
-
-  if(!Object.keys(s).length)return h+empty('📊','NO ACCURACY DATA YET','Log some results to see accuracy stats');
-
-  // Prediction accuracy
-  h+='<div class="section-header">PREDICTION ACCURACY</div>';
-  Object.entries(s).forEach(([sport,st])=>{
-    const tot=st.correct+st.incorrect,acc=tot>0?Math.round(st.correct/tot*100):0,col=acc>=50?'var(--green)':acc>=35?'var(--amber)':'var(--red)';
-    h+=`<div class="accuracy-card"><div class="accuracy-title">${sport}</div>
-      <div class="accuracy-row"><span>Accuracy</span><span class="accuracy-pct" style="color:${col}">${acc}%</span></div>
-      <div class="accuracy-row"><span>✓ Correct</span><span style="color:var(--green)">${st.correct}</span></div>
-      <div class="accuracy-row"><span>✗ Incorrect</span><span style="color:var(--red)">${st.incorrect}</span></div>
-
-      <div style="margin-top:10px"><div class="conf-bar" style="height:6px"><div class="conf-fill" style="width:${acc}%;background:${col}"></div></div></div></div>`;
-  });
-  let tc=0,ti=0;Object.values(s).forEach(x=>{tc+=x.correct;ti+=x.incorrect;});
-  const tot=tc+ti,oa=tot>0?Math.round(tc/tot*100):0,oc=oa>=50?'var(--green)':oa>=35?'var(--amber)':'var(--red)';
-  h+=`<div class="section-header">OVERALL</div><div class="stat-bar">
-    <div class="stat"><div class="stat-val" style="color:${oc}">${oa}%</div><div class="stat-label">ACCURACY</div></div>
-    <div class="stat"><div class="stat-val" style="color:${plCol}">${bpl.total>=0?'+':''}£${bpl.total.toFixed(0)}</div><div class="stat-label">BET P&L</div></div>
-    <div class="stat"><div class="stat-val" style="color:${plCol}">${roi>=0?'+':''}${roi.toFixed(0)}%</div><div class="stat-label">ROI</div></div>
-  </div>`;
   return h;
 }
-function renderSetupPrompt(){document.getElementById('content').innerHTML=`<div style="padding:24px 0"><div class="empty"><div class="empty-icon">⚙️</div><div class="empty-title">SETUP REQUIRED</div><div class="empty-sub" style="margin-bottom:20px">Connect your Google Sheet to see predictions on your phone</div></div><div class="setup-hint" onclick="openConfig()">Tap here to enter your Google Sheets ID and API Key →</div></div>`;}
-function renderError(m){document.getElementById('content').innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-title">LOAD ERROR</div><div class="empty-sub">${m}<br><br>Check your Sheet ID and API Key in Setup</div></div>`;}
-function render(){let h='';if(currentTab==='mlb')h=renderMLB();else if(currentTab==='racing')h=renderRacing();else if(currentTab==='history')h=renderHistory();else if(currentTab==='stats')h=renderStats();document.getElementById('content').innerHTML=h;}
-function switchTab(tab,el,nav){
+
+function showTab(tab){
   currentTab=tab;
-  document.querySelectorAll('.nav-item').forEach(t=>t.classList.remove('active'));
-  if(nav)nav.classList.add('active');
-  render();
+  document.querySelectorAll('.nav-btn').forEach(e=>e.classList.remove('active'));
+  document.querySelector(`.nav-btn[onclick="showTab('${tab}')"]`)?.classList.add('active');
+  const c=document.getElementById('mainContent');
+  const{sheetId,apiKey}=getCfg();
+  if(tab==='setup'){
+    c.innerHTML=`<div class="setup-card"><div class="setup-label">GOOGLE SHEETS ID</div><input class="setup-input" id="sheetInput" placeholder="Sheet ID..." value="${sheetId}"></div><div class="setup-card"><div class="setup-label">GOOGLE API KEY</div><input class="setup-input" id="apiInput" placeholder="AIzaSy..." value="${apiKey}"></div><button class="setup-btn" onclick="saveSetup()">SAVE & LOAD</button>`;
+    return;
+  }
+  if(!sheetId||!apiKey){c.innerHTML=`<div class="empty"><div class="empty-icon">⚙️</div><div class="empty-title">SETUP REQUIRED</div><div style="font-size:12px">Add your Sheet ID and API key</div></div>`;return;}
+  if(tab==='long'){
+    const signals=allData.signals.filter(s=>s.bias==='LONG');
+    if(!signals.length){c.innerHTML=`<div class="empty"><div class="empty-icon">📈</div><div class="empty-title">NO LONG SIGNALS</div><div style="font-size:12px">Run the trading bot to generate signals</div></div>`;return;}
+    const high=signals.filter(s=>parseInt(s.confidence)>=70).length;
+    const med=signals.filter(s=>parseInt(s.confidence)>=55&&parseInt(s.confidence)<70).length;
+    const low=signals.filter(s=>parseInt(s.confidence)<55).length;
+    c.innerHTML=`<div class="summary-bar"><div class="summary-stat"><div class="summary-val" style="color:var(--green)">${high}</div><div class="summary-label">HIGH</div></div><div class="summary-stat"><div class="summary-val" style="color:var(--amber)">${med}</div><div class="summary-label">MODERATE</div></div><div class="summary-stat"><div class="summary-val" style="color:var(--muted)">${low}</div><div class="summary-label">LOW</div></div></div><div class="section-header">LONG SIGNALS</div>${signals.sort((a,b)=>parseInt(b.confidence)-parseInt(a.confidence)).map(renderCard).join('')}`;
+  }else if(tab==='short'){
+    const signals=allData.signals.filter(s=>s.bias==='SHORT');
+    if(!signals.length){c.innerHTML=`<div class="empty"><div class="empty-icon">📉</div><div class="empty-title">NO SHORT SIGNALS</div><div style="font-size:12px">Run the trading bot to generate signals</div></div>`;return;}
+    const high=signals.filter(s=>parseInt(s.confidence)>=70).length;
+    const med=signals.filter(s=>parseInt(s.confidence)>=55&&parseInt(s.confidence)<70).length;
+    const low=signals.filter(s=>parseInt(s.confidence)<55).length;
+    c.innerHTML=`<div class="summary-bar"><div class="summary-stat"><div class="summary-val" style="color:var(--green)">${high}</div><div class="summary-label">HIGH</div></div><div class="summary-stat"><div class="summary-val" style="color:var(--amber)">${med}</div><div class="summary-label">MODERATE</div></div><div class="summary-stat"><div class="summary-val" style="color:var(--muted)">${low}</div><div class="summary-label">LOW</div></div></div><div class="section-header">SHORT SIGNALS</div>${signals.sort((a,b)=>parseInt(b.confidence)-parseInt(a.confidence)).map(renderCard).join('')}`;
+  }else if(tab==='stats'){
+    c.innerHTML=renderStats();
+  }else if(tab==='history'){
+    if(!allData.history.length){c.innerHTML=`<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">NO HISTORY YET</div><div style="font-size:12px">Signals will appear here after the bot runs</div></div>`;return;}
+    // Group by date and instrument (not by row)
+    const seen = new Set();
+    const unique = allData.history.slice().reverse().filter(r=>{
+      const key = r.date.split(' ')[0] + r.instrument;
+      if(seen.has(key)) return false;
+      seen.add(key);
+      return r.instrument && r.instrument.length > 1;
+    }).slice(0,50);
+
+    c.innerHTML=`<div class="section-header">SIGNAL HISTORY</div>`+unique.map(r=>{
+      const rc=r.result==='CORRECT'?'correct':r.result==='INCORRECT'?'incorrect':'pending';
+      const bc=r.bias==='LONG'?'var(--green)':'var(--red)';
+      const date=r.date.split(' ')[0];
+      return`<div class="history-row"><div><div class="history-instrument">${r.instrument}</div><div class="history-date">${date} · <span style="color:${bc}">${r.bias}</span></div></div><div class="result-badge ${rc}">${r.result}</div></div>`;
+    }).join('');
+  }
 }
-if(SHEET_ID&&API_KEY)loadData();else renderSetupPrompt();
+function saveSetup(){
+  localStorage.setItem(SID,document.getElementById('sheetInput').value.trim());
+  localStorage.setItem(AID,document.getElementById('apiInput').value.trim());
+  loadData();
+}
+loadData();
 </script>
 </body>
 </html>
