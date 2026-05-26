@@ -91,6 +91,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 <div class="bottom-nav">
   <div class="nav-item active" onclick="switchTab('mlb',null,this)"><div class="nav-icon">⚾</div><div class="nav-label">MLB</div></div>
   <div class="nav-item" onclick="switchTab('racing',null,this)"><div class="nav-icon">🐎</div><div class="nav-label">RACING</div></div>
+  <div class="nav-item" onclick="switchTab('accas',null,this)"><div class="nav-icon">🎯</div><div class="nav-label">PICKS</div></div>
   <div class="nav-item" onclick="switchTab('history',null,this)"><div class="nav-icon">📋</div><div class="nav-label">HISTORY</div></div>
   <div class="nav-item" onclick="switchTab('stats',null,this)"><div class="nav-icon">📊</div><div class="nav-label">STATS</div></div>
   <div class="nav-item" onclick="openConfig()"><div class="nav-icon">⚙️</div><div class="nav-label">SETUP</div></div>
@@ -141,15 +142,17 @@ async function loadData(){
   if(!SHEET_ID||!API_KEY){renderSetupPrompt();return;}
   
   try{
-    const[mlbRows,racingRows,historyRows,betsRows]=await Promise.all([
+    const[mlbRows,racingRows,historyRows,betsRows,accaRows]=await Promise.all([
       fetchSheet('Daily Summary','A4:L200'),
       fetchSheet('Racing','A3:K200'),
       fetchSheet('History','A5:K500'),
       fetchSheet('Bets','A2:I500').catch(()=>[]),
+      fetchSheet('Accas','A2:G100').catch(()=>[]),
     ]);
     allData.bets=betsRows;
-    allData.mlb=mlbRows.map(r=>({date:r[0]||'',sport:r[1]||'MLB',team:r[2]||'',opponent:r[3]||'',winner:r[4]||'',score:r[5]||'',aiConf:parseInt(r[6])||0,blended:parseInt(r[7])||0,actual:r[8]||'',result:r[9]||'PENDING',time:r[11]||'TBD'}));
-    allData.racing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winner:r[2]||'',odds:r[3]||'',eachWay:r[4]||'',aiConf:parseInt(r[5])||0,actual:r[8]||'',result:r[9]||'PENDING',time:r[10]||''}));
+    allData.accas=(accaRows||[]).map(r=>({date:r[0]||'',type:r[1]||'',legs:r[2]||'',odds:r[3]||'',returns:r[4]||'',conf:r[5]||'',selections:r[6]||''}));
+    allData.mlb=mlbRows.map(r=>({date:r[0]||'',sport:r[1]||'MLB',team:r[2]||'',opponent:r[3]||'',winner:r[4]||'',score:r[5]||'',aiConf:parseInt(r[6])||0,blended:parseInt(r[7])||0,actual:r[8]||'',result:r[9]||'PENDING',time:r[11]||'TBD',recommendation:r[12]||'',kellyStake:r[13]||'',fixedStake:r[14]||'',edge:r[15]||''}));
+    allData.racing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winner:r[2]||'',odds:r[3]||'',eachWay:r[4]||'',aiConf:parseInt(r[5])||0,actual:r[8]||'',result:r[9]||'PENDING',time:r[10]||'',recommendation:r[11]||'',kellyStake:r[12]||'',fixedStake:r[13]||'',edge:r[14]||''}));
     allData.history=historyRows.map(r=>({date:r[0]||'',sport:r[1]||'',team:r[2]||'',opponent:r[3]||'',winner:r[4]||'',odds:r[5]||'',aiConf:parseInt(r[6])||0,actual:r[8]||'',result:r[9]||'PENDING'}));
     const stats={};
     allData.history.forEach(p=>{const s=p.sport||'ALL';if(!stats[s])stats[s]={correct:0,incorrect:0,pending:0};if(p.result==='CORRECT')stats[s].correct++;else if(p.result==='INCORRECT')stats[s].incorrect++;else stats[s].pending++;});
@@ -163,11 +166,13 @@ function confColor(p){return p>=70?'var(--green)':p>=45?'var(--amber)':'var(--re
 function confClass(p){return p>=70?'high':p>=45?'medium':'low';}
 function badge(r){const u=(r||'').toUpperCase();if(u==='CORRECT')return'<span class="badge correct">✓ CORRECT</span>';if(u==='INCORRECT')return'<span class="badge incorrect">✗ WRONG</span>';return'';}
 
-function card(winner,sub,conf,result,time,odds,extra){
+function card(winner,sub,conf,result,time,odds,extra,rec,kelly,fixed,edge){
   const cc=confClass(conf),col=confColor(conf);
   const oddsStr=odds?`<span class="odds"> ${odds}</span>`:'';
   const extraStr=extra?`<div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-family:'DM Mono',monospace">${extra}</div>`:'';
-  return`<div class="card ${cc}"><div class="card-sport">${sub}</div><div class="card-winner">${winner}${oddsStr}</div>${extraStr}<div class="card-meta"><div class="conf-bar-wrap"><div class="conf-label">CONFIDENCE</div><div class="conf-bar"><div class="conf-fill" style="width:${conf}%;background:${col}"></div></div></div><div class="conf-pct" style="color:${col}">${conf}%</div>${badge(result)}<div class="card-time">${time}</div></div></div>`;
+  const recCol=rec==='BET'||rec==='TRADE'?'var(--green)':rec==='SKIP'?'var(--red)':'var(--amber)';
+  const stakeStr=(rec&&kelly)?`<div style="display:flex;gap:10px;margin-top:8px;padding:8px;background:rgba(255,255,255,0.03);border-radius:6px;font-size:10px"><span style="color:${recCol};letter-spacing:1px;font-weight:500">${rec}</span><span style="color:var(--muted)">Kelly: <span style="color:var(--green)">${kelly}</span></span><span style="color:var(--muted)">Fixed: <span style="color:var(--text)">${fixed}</span></span><span style="color:var(--muted)">Edge: <span style="color:var(--amber)">${edge}</span></span></div>`:'';
+  return`<div class="card ${cc}"><div class="card-sport">${sub}</div><div class="card-winner">${winner}${oddsStr}</div>${extraStr}<div class="card-meta"><div class="conf-bar-wrap"><div class="conf-label">CONFIDENCE</div><div class="conf-bar"><div class="conf-fill" style="width:${conf}%;background:${col}"></div></div></div><div class="conf-pct" style="color:${col}">${conf}%</div>${badge(result)}<div class="card-time">${time}</div></div>${stakeStr}</div>`;
 }
 
 function empty(icon,title,sub){return`<div class="empty"><div class="empty-icon">${icon}</div><div class="empty-title">${title}</div><div class="empty-sub">${sub}</div></div>`;}
@@ -176,14 +181,14 @@ function renderMLB(){
   const d=allData.mlb;if(!d.length)return empty('⚾','NO MLB TODAY',"Run the daily sweep to load today's predictions");
   const high=d.filter(x=>x.blended>=70).length,med=d.filter(x=>x.blended>=45&&x.blended<70).length,low=d.filter(x=>x.blended<45).length;
   let h=`<div class="stat-bar"><div class="stat"><div class="stat-val green">${high}</div><div class="stat-label">HIGH CONF</div></div><div class="stat"><div class="stat-val amber">${med}</div><div class="stat-label">MODERATE</div></div><div class="stat"><div class="stat-val red">${low}</div><div class="stat-label">LOW CONF</div></div></div><div class="section-header">TODAY'S PREDICTIONS</div>`;
-  d.forEach(x=>{const m=x.opponent?`${x.opponent} @ ${x.team}`:x.team;h+=card(x.winner,m,x.blended||x.aiConf,x.result,x.time,'',x.score);});
+  d.forEach(x=>{const m=x.opponent?`${x.opponent} @ ${x.team}`:x.team;h+=card(x.winner,m,x.blended||x.aiConf,x.result,x.time,'',x.score,x.recommendation,x.kellyStake,x.fixedStake,x.edge);});
   return h;
 }
 function renderRacing(){
   const d=allData.racing;if(!d.length)return empty('🐎','NO RACES TODAY',"Run racing_sweep.bat to load today's race predictions");
   const high=d.filter(x=>x.aiConf>=70).length,med=d.filter(x=>x.aiConf>=45&&x.aiConf<70).length,low=d.filter(x=>x.aiConf<45).length;
   let h=`<div class="stat-bar"><div class="stat"><div class="stat-val green">${high}</div><div class="stat-label">HIGH CONF</div></div><div class="stat"><div class="stat-val amber">${med}</div><div class="stat-label">MODERATE</div></div><div class="stat"><div class="stat-val red">${low}</div><div class="stat-label">LOW CONF</div></div></div><div class="section-header">TODAY'S RACES</div>`;
-  d.forEach(x=>{h+=card(x.winner,x.race,x.aiConf,x.result,x.time,x.odds,x.eachWay?`EW: ${x.eachWay}`:'');});
+  d.forEach(x=>{h+=card(x.winner,x.race,x.aiConf,x.result,x.time,x.odds,x.eachWay?`EW: ${x.eachWay}`:'',x.recommendation,x.kellyStake,x.fixedStake,x.edge);});
   return h;
 }
 function renderHistory(){
@@ -288,7 +293,65 @@ function renderStats(){
 }
 function renderSetupPrompt(){document.getElementById('content').innerHTML=`<div style="padding:24px 0"><div class="empty"><div class="empty-icon">⚙️</div><div class="empty-title">SETUP REQUIRED</div><div class="empty-sub" style="margin-bottom:20px">Connect your Google Sheet to see predictions on your phone</div></div><div class="setup-hint" onclick="openConfig()">Tap here to enter your Google Sheets ID and API Key →</div></div>`;}
 function renderError(m){document.getElementById('content').innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-title">LOAD ERROR</div><div class="empty-sub">${m}<br><br>Check your Sheet ID and API Key in Setup</div></div>`;}
-function render(){let h='';if(currentTab==='mlb')h=renderMLB();else if(currentTab==='racing')h=renderRacing();else if(currentTab==='history')h=renderHistory();else if(currentTab==='stats')h=renderStats();document.getElementById('content').innerHTML=h;}
+function render(){let h='';if(currentTab==='mlb')h=renderMLB();else if(currentTab==='racing')h=renderRacing();else if(currentTab==='history')h=renderHistory();else if(currentTab==='accas')h=renderAccas();else if(currentTab==='stats')h=renderStats();document.getElementById('content').innerHTML=h;}
+function renderAccas(){
+  if(!allData.accas||!allData.accas.length) return empty('🎯','NO ACCAS YET','Run the daily sweep to generate accumulators');
+
+  // Get today's accas
+  const today = allData.accas.length ? allData.accas[allData.accas.length-1].date : '';
+  const todayAccas = allData.accas.filter(a=>a.date===today);
+  if(!todayAccas.length) return empty('🎯','NO ACCAS TODAY','Check back after the daily sweep');
+
+  // Top picks from MLB and Racing
+  const allPreds = [...allData.mlb,...allData.racing];
+  const topPicks = allPreds.filter(x=>x.blended||x.aiConf).sort((a,b)=>(b.blended||b.aiConf)-(a.blended||a.aiConf)).slice(0,5);
+
+  let h = '<div class="section-header">TOP PICKS TODAY</div>';
+  topPicks.forEach((x,i)=>{
+    const conf = x.blended||x.aiConf||0;
+    const col  = conf>=70?'var(--green)':conf>=55?'var(--amber)':'var(--red)';
+    const sport = x.opponent?'⚾':'🐎';
+    const name  = x.winner||'';
+    const sub   = x.opponent?`${x.opponent} @ ${x.team}`:x.race||'';
+    h+=`<div style="background:var(--card);border:1px solid var(--border);border-left:3px solid ${col};border-radius:8px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+      <div><div style="font-size:10px;color:var(--muted);margin-bottom:3px">${sport} ${sub}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:18px">${name}</div></div>
+      <div style="font-size:22px;font-family:'Bebas Neue',sans-serif;color:${col}">${conf}%</div>
+    </div>`;
+  });
+
+  h += '<div class="section-header" style="margin-top:16px">SUGGESTED ACCUMULATORS</div>';
+  const typeEmoji = {MLB:'⚾',RACING:'🐎',MIXED:'🎯'};
+  todayAccas.forEach(a=>{
+    const emoji = typeEmoji[a.type]||'🎯';
+    const conf  = parseFloat(a.conf)||0;
+    const col   = conf>=60?'var(--green)':conf>=45?'var(--amber)':'var(--red)';
+    const sels  = a.selections.split(' | ');
+    h+=`<div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px">${emoji} ${a.type} ACCA</div>
+        <div style="text-align:right"><div style="font-size:10px;color:var(--muted)">COMBINED ODDS</div><div style="font-size:18px;font-family:'Bebas Neue',sans-serif;color:var(--amber)">${a.odds}:1</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+        <div style="background:rgba(255,255,255,0.03);border-radius:6px;padding:8px;text-align:center">
+          <div style="font-size:9px;color:var(--muted);letter-spacing:1px">LEGS</div>
+          <div style="font-size:20px;font-family:'Bebas Neue',sans-serif">${a.legs}</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.03);border-radius:6px;padding:8px;text-align:center">
+          <div style="font-size:9px;color:var(--muted);letter-spacing:1px">£1 RETURNS</div>
+          <div style="font-size:20px;font-family:'Bebas Neue',sans-serif;color:var(--green)">${a.returns}</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.03);border-radius:6px;padding:8px;text-align:center">
+          <div style="font-size:9px;color:var(--muted);letter-spacing:1px">CONF</div>
+          <div style="font-size:20px;font-family:'Bebas Neue',sans-serif;color:${col}">${a.conf}</div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:6px">SELECTIONS</div>
+      ${sels.map((s,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)"><span style="color:var(--green);font-size:12px">${i+1}.</span><span style="font-size:13px">${s}</span></div>`).join('')}
+    </div>`;
+  });
+  return h;
+}
+
 function switchTab(tab,el,nav){
   currentTab=tab;
   document.querySelectorAll('.nav-item').forEach(t=>t.classList.remove('active'));
