@@ -144,7 +144,7 @@ async function loadData(){
   try{
     const[mlbRows,racingRows,historyRows,betsRows,accaRows]=await Promise.all([
       fetchSheet('Daily Summary','A4:L200'),
-      fetchSheet('Racing','A3:K200'),
+      fetchSheet('Racing','A3:P200'),
       fetchSheet('History','A5:K500'),
       fetchSheet('Bets','A2:I500').catch(()=>[]),
       fetchSheet('Accas','A2:G100').catch(()=>[]),
@@ -152,7 +152,10 @@ async function loadData(){
     allData.bets=betsRows;
     allData.accas=(accaRows||[]).map(r=>({date:r[0]||'',type:r[1]||'',legs:r[2]||'',odds:r[3]||'',returns:r[4]||'',conf:r[5]||'',selections:r[6]||''}));
     allData.mlb=mlbRows.map(r=>({date:r[0]||'',sport:r[1]||'MLB',team:r[2]||'',opponent:r[3]||'',winner:r[4]||'',score:r[5]||'',aiConf:parseInt(r[6])||0,blended:parseInt(r[7])||0,actual:r[8]||'',result:r[9]||'PENDING',time:r[11]||'TBD',recommendation:r[12]||'',kellyStake:r[13]||'',fixedStake:r[14]||'',edge:r[15]||'',valueRating:r[16]||'',valueEdge:r[17]||'',valueEv:r[18]||''}));
-    allData.racing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winner:r[2]||'',odds:r[3]||'',eachWay:r[4]||'',aiConf:parseInt(r[5])||0,actual:r[8]||'',result:r[9]||'PENDING',time:r[10]||'',recommendation:r[11]||'',kellyStake:r[12]||'',fixedStake:r[13]||'',edge:r[14]||'',valueRating:r[15]||'',valueEdge:r[16]||'',valueEv:r[17]||'',ewRec:r[18]||'',winEv:r[19]||'',ewEvVal:r[20]||'',pPlace:r[21]||'',placeTerms:r[22]||''}));
+    const _rawRacing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winner:r[2]||'',odds:r[3]||'',eachWay:r[4]||'',ewPlaceTerms:r[5]||'',aiConf:parseInt(r[6])||0,going:r[7]||'',ewResult:r[8]||'',ewRec:r[9]||'',winVsEwEv:r[10]||'',placeProb:r[11]||'',distance:r[12]||'',actual:r[13]||'',result:r[14]||'PENDING',time:r[15]||''}));
+  const _seenRacing=new Set();
+  allData.racing=_rawRacing.filter(x=>{const k=x.race+'|'+x.winner;if(_seenRacing.has(k))return false;_seenRacing.add(k);return true;});
+  //allData.racing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winner:r[2]||'',odds:r[3]||'',eachWay:r[4]||'',ewPlaceTerms:r[5]||'',aiConf:parseInt(r[6])||0,going:r[7]||'',ewResult:r[8]||'',ewRec:r[9]||'',winVsEwEv:r[10]||'',placeProb:r[11]||'',distance:r[12]||'',actual:r[13]||'',result:r[14]||'PENDING',time:r[15]||''}));
     allData.history=historyRows.map(r=>({date:r[0]||'',sport:r[1]||'',team:r[2]||'',opponent:r[3]||'',winner:r[4]||'',odds:r[5]||'',aiConf:parseInt(r[6])||0,actual:r[8]||'',result:r[9]||'PENDING'}));
     const stats={};
     allData.history.forEach(p=>{const s=p.sport||'ALL';if(!stats[s])stats[s]={correct:0,incorrect:0,pending:0};if(p.result==='CORRECT')stats[s].correct++;else if(p.result==='INCORRECT')stats[s].incorrect++;else stats[s].pending++;});
@@ -191,10 +194,9 @@ function renderRacing(){
   const high=d.filter(x=>x.aiConf>=70).length,med=d.filter(x=>x.aiConf>=45&&x.aiConf<70).length,low=d.filter(x=>x.aiConf<45).length;
   let h=`<div class="stat-bar"><div class="stat"><div class="stat-val green">${high}</div><div class="stat-label">HIGH CONF</div></div><div class="stat"><div class="stat-val amber">${med}</div><div class="stat-label">MODERATE</div></div><div class="stat"><div class="stat-val red">${low}</div><div class="stat-label">LOW CONF</div></div></div><div class="section-header">TODAY'S RACES</div>`;
   d.forEach(x=>{
-    const ewLabel = x.ewRec==='E/W' ? `BET E/W` : x.ewRec==='WIN' ? `BET WIN` : x.ewRec==='SKIP' ? `SKIP` : '';
-    const ewInfo  = x.ewRec&&x.ewRec!=='SKIP' ? `${ewLabel} · Place: ${x.pPlace}% (top ${x.placeTerms})` : ewLabel;
-    const extraInfo = [x.eachWay?`EW pick: ${x.eachWay}`:'', ewInfo].filter(Boolean).join(' | ');
-    h+=card(x.winner,x.race,x.aiConf,x.result,x.time,x.odds,extraInfo,x.recommendation,x.kellyStake,x.fixedStake,x.edge,x.valueRating,x.valueEdge,x.valueEv);
+    const ewLabel = x.ewRec==='E/W'?'BET E/W':x.ewRec==='WIN'?'BET WIN':x.ewRec==='SKIP'?'SKIP':'';
+    const extraInfo = [x.eachWay?`EW: ${x.eachWay}`:'', ewLabel, x.winVsEwEv].filter(Boolean).join(' | ');
+    h+=card(x.winner,x.race,x.aiConf,x.result,x.time,x.odds,extraInfo,'','','','','','','');
   });
   return h;
 }
@@ -328,7 +330,8 @@ function renderAccas(){
 
   h += '<div class="section-header" style="margin-top:16px">SUGGESTED ACCUMULATORS</div>';
   const typeEmoji = {MLB:'⚾',RACING:'🐎',MIXED:'🎯'};
-  todayAccas.forEach(a=>{
+  const uniqueAccas=todayAccas.filter((a,i,arr)=>arr.findIndex(b=>b.type===a.type&&b.legs===a.legs)===i).slice(0,3);
+  uniqueAccas.forEach(a=>{
     const emoji = typeEmoji[a.type]||'🎯';
     const conf  = parseFloat(a.conf)||0;
     const col   = conf>=60?'var(--green)':conf>=45?'var(--amber)':'var(--red)';
