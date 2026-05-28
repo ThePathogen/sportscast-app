@@ -144,7 +144,7 @@ async function loadData(){
   try{
     const[mlbRows,racingRows,historyRows,betsRows,accaRows]=await Promise.all([
       fetchSheet('Daily Summary','A4:S200'),
-      fetchSheet('Racing','A3:P200'),
+      fetchSheet('Racing','A3:S200'),
       fetchSheet('History','A5:K500'),
       fetchSheet('Bets','A2:I500').catch(()=>[]),
       fetchSheet('Accas','A2:G100').catch(()=>[]),
@@ -152,7 +152,7 @@ async function loadData(){
     allData.bets=betsRows;
     allData.accas=(accaRows||[]).map(r=>({date:r[0]||'',type:r[1]||'',legs:r[2]||'',odds:r[3]||'',returns:r[4]||'',conf:r[5]||'',selections:r[6]||''}));
     allData.mlb=mlbRows.map(r=>({date:r[0]||'',sport:r[1]||'MLB',team:r[2]||'',opponent:r[3]||'',winner:r[4]||'',score:r[5]||'',aiConf:parseInt(r[6])||0,blended:parseInt(r[7])||0,actual:r[8]||'',result:r[9]||'PENDING',time:r[11]||'TBD',recommendation:r[12]||'',kellyStake:r[13]||'',fixedStake:r[14]||'',edge:r[15]||'',valueRating:r[16]||'',valueEdge:r[17]||'',valueEv:r[18]||''}));
-    const _rawRacing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winner:r[2]||'',odds:r[3]||'',eachWay:r[4]||'',ewPlaceTerms:r[5]||'',aiConf:parseInt(r[6])||0,going:r[7]||'',ewResult:r[8]||'',ewRec:r[9]||'',winVsEwEv:r[10]||'',placeProb:r[11]||'',distance:r[12]||'',actual:r[13]||'',result:r[14]||'PENDING',time:r[15]||''}));
+    const _rawRacing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winner:r[2]||'',odds:r[3]||'',eachWay:r[4]||'',ewPlaceTerms:r[5]||'',aiConf:parseInt(r[6])||0,going:r[7]||'',ewResult:r[8]||'',ewRec:r[9]||'',winVsEwEv:r[10]||'',placeProb:r[11]||'',distance:r[12]||'',actual:r[13]||'',result:r[14]||'PENDING',time:r[15]||'',valueRating:r[16]||'',valueEdge:r[17]||'',valueEv:r[18]||''}));
   const _seenRacing=new Set();
   allData.racing=_rawRacing.filter(x=>{if(!x.winner||!x.race)return false;const k=x.race+'|'+x.winner;if(_seenRacing.has(k))return false;_seenRacing.add(k);return true;});
   //allData.racing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winner:r[2]||'',odds:r[3]||'',eachWay:r[4]||'',ewPlaceTerms:r[5]||'',aiConf:parseInt(r[6])||0,going:r[7]||'',ewResult:r[8]||'',ewRec:r[9]||'',winVsEwEv:r[10]||'',placeProb:r[11]||'',distance:r[12]||'',actual:r[13]||'',result:r[14]||'PENDING',time:r[15]||''}));
@@ -203,7 +203,7 @@ function renderRacing(){
 function renderHistory(){
   const d=allData.history.slice().reverse().slice(0,50);if(!d.length)return empty('📋','NO HISTORY YET','Make some predictions to build your history');
   let h='<div class="section-header">RECENT PREDICTIONS</div>';
-  d.forEach(x=>{const s=x.sport==='RACING'?x.team:(x.opponent?`${x.opponent} @ ${x.team}`:x.team);h+=card(x.winner,s,x.aiConf,x.result,x.date.slice(0,10),x.odds);});
+  d.forEach(x=>{const s=x.sport==='RACING'?x.team:(x.opponent?`${x.opponent} @ ${x.team}`:x.team);const resultBadge=x.result==='CORRECT'?'<span style="color:var(--green);font-size:11px;font-weight:500">✓ CORRECT</span>':x.result==='INCORRECT'?'<span style="color:var(--red);font-size:11px;font-weight:500">✗ INCORRECT</span>':'<span style="color:var(--muted);font-size:11px">⏳ PENDING</span>';h+=`<div class="card"><div class="card-sport">${s}</div><div class="card-winner">${x.winner}</div><div class="card-meta"><div class="conf-bar-wrap"><div class="conf-label">CONFIDENCE</div><div class="conf-bar"><div class="conf-fill" style="width:${x.aiConf}%;background:${x.aiConf>=70?'var(--green)':x.aiConf>=45?'var(--amber)':'var(--red)'}"></div></div></div><div class="conf-pct" style="color:${x.aiConf>=70?'var(--green)':x.aiConf>=45?'var(--amber)':'var(--red)'}">${x.aiConf}%</div>${resultBadge}<div class="card-time">${x.date.slice(0,10)}</div></div></div>`;});
   return h;
 }
 function calcPL(history){
