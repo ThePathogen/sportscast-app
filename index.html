@@ -158,7 +158,17 @@ async function loadData(){
   //allData.racing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winner:r[2]||'',odds:r[3]||'',eachWay:r[4]||'',ewPlaceTerms:r[5]||'',aiConf:parseInt(r[6])||0,going:r[7]||'',ewResult:r[8]||'',ewRec:r[9]||'',winVsEwEv:r[10]||'',placeProb:r[11]||'',distance:r[12]||'',actual:r[13]||'',result:r[14]||'PENDING',time:r[15]||''}));
     allData.history=historyRows.map(r=>({date:r[0]||'',sport:r[1]||'',team:r[2]||'',opponent:r[3]||'',winner:r[4]||'',odds:r[5]||'',aiConf:parseInt(r[6])||0,actual:r[8]||'',result:r[9]||'PENDING'}));
     const stats={};
-    allData.history.forEach(p=>{const s=p.sport||'ALL';if(!stats[s])stats[s]={correct:0,incorrect:0,pending:0};if(p.result==='CORRECT')stats[s].correct++;else if(p.result==='INCORRECT')stats[s].incorrect++;else stats[s].pending++;});
+    allData.history.forEach(p=>{
+    const s=p.sport||'ALL';
+    if(!stats[s])stats[s]={correct:0,incorrect:0,pending:0,placed:0,unplaced:0};
+    if(p.result==='CORRECT')stats[s].correct++;
+    else if(p.result==='INCORRECT')stats[s].incorrect++;
+    else if(p.result&&p.result.includes('PLACED')&&!p.result.includes('UN'))stats[s].placed++;
+    else if(p.result&&p.result.includes('UNPLACED'))stats[s].unplaced++;
+    else stats[s].pending++;
+    if(!stats['ALL'])stats['ALL']={correct:0,incorrect:0,pending:0,placed:0,unplaced:0};
+    if(s!=='ALL'){if(p.result==='CORRECT')stats['ALL'].correct++;else if(p.result==='INCORRECT')stats['ALL'].incorrect++;else if(p.result&&p.result.includes('PLACED')&&!p.result.includes('UN'))stats['ALL'].placed++;else if(p.result&&p.result.includes('UNPLACED'))stats['ALL'].unplaced++;else stats['ALL'].pending++;}
+  });
     allData.stats=stats;
     render();
   }catch(e){renderError(e.message);}
@@ -284,11 +294,18 @@ function renderStats(){
   h+='<div class="section-header">PREDICTION ACCURACY</div>';
   Object.entries(s).forEach(([sport,st])=>{
     const tot=st.correct+st.incorrect,acc=tot>0?Math.round(st.correct/tot*100):0,col=acc>=50?'var(--green)':acc>=35?'var(--amber)':'var(--red)';
+    const placed=st.placed||0,unplaced=st.unplaced||0,ewTot=placed+unplaced;
+    const placeRate=ewTot>0?Math.round(placed/ewTot*100):0;
+    const placeCol=placeRate>=35?'var(--green)':placeRate>=20?'var(--amber)':'var(--red)';
     h+=`<div class="accuracy-card"><div class="accuracy-title">${sport}</div>
-      <div class="accuracy-row"><span>Accuracy</span><span class="accuracy-pct" style="color:${col}">${acc}%</span></div>
+      <div class="accuracy-row"><span>Win Accuracy</span><span class="accuracy-pct" style="color:${col}">${acc}%</span></div>
       <div class="accuracy-row"><span>✓ Correct</span><span style="color:var(--green)">${st.correct}</span></div>
       <div class="accuracy-row"><span>✗ Incorrect</span><span style="color:var(--red)">${st.incorrect}</span></div>
-
+      ${ewTot>0?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+        <div class="accuracy-row"><span>E/W Place Rate</span><span style="color:${placeCol}">${placeRate}%</span></div>
+        <div class="accuracy-row"><span>✓ Placed</span><span style="color:var(--green)">${placed}</span></div>
+        <div class="accuracy-row"><span>✗ Unplaced</span><span style="color:var(--red)">${unplaced}</span></div>
+      </div>`:''}
       <div style="margin-top:10px"><div class="conf-bar" style="height:6px"><div class="conf-fill" style="width:${acc}%;background:${col}"></div></div></div></div>`;
   });
   let tc=0,ti=0;Object.values(s).forEach(x=>{tc+=x.correct;ti+=x.incorrect;});
