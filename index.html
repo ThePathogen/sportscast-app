@@ -152,7 +152,7 @@ async function loadData(){
     allData.bets=betsRows;
     allData.accas=(accaRows||[]).map(r=>({date:r[0]||'',type:r[1]||'',legs:r[2]||'',odds:r[3]||'',returns:r[4]||'',conf:r[5]||'',selections:r[6]||''}));
     allData.mlb=mlbRows.map(r=>({date:r[0]||'',sport:r[1]||'MLB',team:r[2]||'',opponent:r[3]||'',winner:r[4]||'',score:r[5]||'',aiConf:parseInt(r[6])||0,blended:parseInt(r[7])||0,actual:r[8]||'',result:r[9]||'PENDING',time:r[11]||'TBD',recommendation:r[12]||'',kellyStake:r[13]||'',fixedStake:r[14]||'',edge:r[15]||'',valueRating:r[16]||'',valueEdge:r[17]||'',valueEv:r[18]||''}));
-    const _rawRacing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winner:r[2]||'',odds:r[3]||'',eachWay:r[4]||'',ewPlaceTerms:r[5]||'',aiConf:parseInt(r[6])||0,going:r[7]||'',ewResult:r[8]||'',ewRec:r[9]||'',winVsEwEv:r[10]||'',placeProb:r[11]||'',distance:r[12]||'',actual:r[13]||'',result:r[14]||'PENDING',time:r[15]||'',valueRating:r[16]||'',valueEdge:r[17]||'',valueEv:r[18]||''}));
+    const _rawRacing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winPick:r[2]||'',winOdds:r[3]||'',eachWay:r[4]||'',ewPlaceTerms:r[5]||'',aiConf:parseInt(r[6])||0,going:r[7]||'',ewResult:r[8]||'',ewRec:r[9]||'',winVsEwEv:r[10]||'',placeProb:r[11]||'',distance:r[12]||'',actual:r[13]||'',result:r[14]||'PENDING',time:r[15]||'',valueRating:r[16]||'',valueEdge:r[17]||'',valueEv:r[18]||'',get winner(){return this.eachWay?this.eachWay.split(' at ')[0].split(' -')[0].split(',')[0].trim():this.winPick;},get odds(){return this.eachWay?this.eachWay.match(/at ([\d\/]+)/)?.[1]||this.winOdds:this.winOdds;}}));
   const _seenRacing=new Set();
   allData.racing=_rawRacing.filter(x=>{if(!x.winner||!x.race)return false;const k=x.race+'|'+x.winner;if(_seenRacing.has(k))return false;_seenRacing.add(k);return true;});
   //allData.racing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winner:r[2]||'',odds:r[3]||'',eachWay:r[4]||'',ewPlaceTerms:r[5]||'',aiConf:parseInt(r[6])||0,going:r[7]||'',ewResult:r[8]||'',ewRec:r[9]||'',winVsEwEv:r[10]||'',placeProb:r[11]||'',distance:r[12]||'',actual:r[13]||'',result:r[14]||'PENDING',time:r[15]||''}));
@@ -204,8 +204,10 @@ function renderRacing(){
   const high=d.filter(x=>x.aiConf>=70).length,med=d.filter(x=>x.aiConf>=45&&x.aiConf<70).length,low=d.filter(x=>x.aiConf<45).length;
   let h=`<div class="stat-bar"><div class="stat"><div class="stat-val green">${high}</div><div class="stat-label">HIGH CONF</div></div><div class="stat"><div class="stat-val amber">${med}</div><div class="stat-label">MODERATE</div></div><div class="stat"><div class="stat-val red">${low}</div><div class="stat-label">LOW CONF</div></div></div><div class="section-header">TODAY'S RACES</div>`;
   d.forEach(x=>{
-    const ewLabel = x.ewRec==='E/W'?'BET E/W':x.ewRec==='WIN'?'BET WIN':x.ewRec==='SKIP'?'SKIP':'';
-    const extraInfo = [x.eachWay?`EW: ${x.eachWay}`:'', ewLabel, x.winVsEwEv].filter(Boolean).join(' | ');
+    // E/W pick is the star — show as main card
+    const ewLabel = x.ewRec==='SKIP'?'SKIP':'BET E/W';
+    const winNote = x.winPick&&x.winPick!==x.winner?`Win pick: ${x.winPick} (${x.winOdds})`:'';
+    const extraInfo = [winNote, x.ewPlaceTerms?`Place terms: ${x.ewPlaceTerms}`:'', x.winVsEwEv].filter(Boolean).join(' | ');
     h+=card(x.winner,x.race,x.aiConf,x.result,x.time,x.odds,extraInfo,'','','','',x.valueRating,x.valueEdge,x.valueEv);
   });
   return h;
