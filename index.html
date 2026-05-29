@@ -205,10 +205,13 @@ function renderRacing(){
   let h=`<div class="stat-bar"><div class="stat"><div class="stat-val green">${high}</div><div class="stat-label">HIGH CONF</div></div><div class="stat"><div class="stat-val amber">${med}</div><div class="stat-label">MODERATE</div></div><div class="stat"><div class="stat-val red">${low}</div><div class="stat-label">LOW CONF</div></div></div><div class="section-header">TODAY'S RACES</div>`;
   d.forEach(x=>{
     // E/W pick is the star — show as main card
-    const ewLabel = x.ewRec==='SKIP'?'SKIP':'BET E/W';
+    const ewRecCol = x.ewRec==='BET E/W'||x.ewRec==='E/W'?'var(--green)':x.ewRec==='SKIP'?'var(--muted)':'var(--amber)';
+    const ewLabel = x.ewRec==='SKIP'
+      ? `<span style="color:var(--muted);font-size:11px">⛔ SKIP E/W — odds under 6/1</span>`
+      : `<span style="color:var(--green);font-size:11px;font-weight:600">✅ BET E/W</span>`;
     const winNote = x.winPick&&x.winPick!==x.winner?`Win pick: ${x.winPick} (${x.winOdds})`:'';
-    const extraInfo = [winNote, x.ewPlaceTerms?`Place terms: ${x.ewPlaceTerms}`:'', x.winVsEwEv].filter(Boolean).join(' | ');
-    h+=card(x.winner,x.race,x.aiConf,x.result,x.time,x.odds,extraInfo,'','','','',x.valueRating,x.valueEdge,x.valueEv);
+    const extraInfo = [ewLabel, winNote, x.ewPlaceTerms?`Place terms: ${x.ewPlaceTerms}`:'', x.winVsEwEv].filter(Boolean).join(' | ');
+    h+=card(x.winner,x.race,x.aiConf,x.result,x.time,x.odds,extraInfo,'','','','',x.ewRec==='SKIP'?'NO VALUE':x.valueRating,x.valueEdge,x.valueEv);
   });
   return h;
 }
