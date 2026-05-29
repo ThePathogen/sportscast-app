@@ -163,7 +163,7 @@ async function loadData(){
     if(!stats[s])stats[s]={correct:0,incorrect:0,pending:0,placed:0,unplaced:0};
     if(p.result==='CORRECT')stats[s].correct++;
     else if(p.result==='INCORRECT')stats[s].incorrect++;
-    else if(p.result&&p.result.includes('PLACED')&&!p.result.includes('UN'))stats[s].placed++;
+    else if(p.result==='PLACED'||p.result==='WIN PLACED')stats[s].placed++;
     else if(p.result&&p.result.includes('UNPLACED'))stats[s].unplaced++;
     else stats[s].pending++;
     if(!stats['ALL'])stats['ALL']={correct:0,incorrect:0,pending:0,placed:0,unplaced:0};
@@ -177,7 +177,7 @@ async function loadData(){
 
 function confColor(p){return p>=70?'var(--green)':p>=45?'var(--amber)':'var(--red)';}
 function confClass(p){return p>=70?'high':p>=45?'medium':'low';}
-function badge(r){const u=(r||'').toUpperCase();if(u==='CORRECT')return'<span class="badge correct">✓ CORRECT</span>';if(u==='INCORRECT')return'<span class="badge incorrect">✗ WRONG</span>';return'';}
+function badge(r){const u=(r||'').toUpperCase();if(u==='CORRECT'||u==='PLACED'||u==='WIN PLACED')return`<span class="badge correct">✓ ${r}</span>`;if(u==='INCORRECT'||u==='UNPLACED')return`<span class="badge incorrect">✗ ${r}</span>`;return '';}
 
 function card(winner,sub,conf,result,time,odds,extra,rec,kelly,fixed,edge,valueRating,valueEdge,valueEv){
   const cc=confClass(conf),col=confColor(conf);
@@ -215,7 +215,12 @@ function renderRacing(){
 function renderHistory(){
   const d=allData.history.slice().reverse().slice(0,50);if(!d.length)return empty('📋','NO HISTORY YET','Make some predictions to build your history');
   let h='<div class="section-header">RECENT PREDICTIONS</div>';
-  d.forEach(x=>{const s=x.sport==='RACING'?x.team:(x.opponent?`${x.opponent} @ ${x.team}`:x.team);const resultBadge=x.result==='CORRECT'?'<span style="color:var(--green);font-size:11px;font-weight:500">✓ CORRECT</span>':x.result==='INCORRECT'?'<span style="color:var(--red);font-size:11px;font-weight:500">✗ INCORRECT</span>':'<span style="color:var(--muted);font-size:11px">⏳ PENDING</span>';h+=`<div class="card"><div class="card-sport">${s}</div><div class="card-winner">${x.winner}</div><div class="card-meta"><div class="conf-bar-wrap"><div class="conf-label">CONFIDENCE</div><div class="conf-bar"><div class="conf-fill" style="width:${x.aiConf}%;background:${x.aiConf>=70?'var(--green)':x.aiConf>=45?'var(--amber)':'var(--red)'}"></div></div></div><div class="conf-pct" style="color:${x.aiConf>=70?'var(--green)':x.aiConf>=45?'var(--amber)':'var(--red)'}">${x.aiConf}%</div>${resultBadge}<div class="card-time">${x.date.slice(0,10)}</div></div></div>`;});
+  d.forEach(x=>{const s=x.sport==='RACING'?x.team:(x.opponent?`${x.opponent} @ ${x.team}`:x.team);const _r=x.result||'';
+    const resultBadge=_r==='CORRECT'||_r==='PLACED'||_r==='WIN PLACED'
+      ?`<span style="color:var(--green);font-size:11px;font-weight:500">✓ ${_r}</span>`
+      :_r==='INCORRECT'||_r==='UNPLACED'
+      ?`<span style="color:var(--red);font-size:11px;font-weight:500">✗ ${_r}</span>`
+      :`<span style="color:var(--muted);font-size:11px">⏳ PENDING</span>`;h+=`<div class="card"><div class="card-sport">${s}</div><div class="card-winner">${x.winner}</div><div class="card-meta"><div class="conf-bar-wrap"><div class="conf-label">CONFIDENCE</div><div class="conf-bar"><div class="conf-fill" style="width:${x.aiConf}%;background:${x.aiConf>=70?'var(--green)':x.aiConf>=45?'var(--amber)':'var(--red)'}"></div></div></div><div class="conf-pct" style="color:${x.aiConf>=70?'var(--green)':x.aiConf>=45?'var(--amber)':'var(--red)'}">${x.aiConf}%</div>${resultBadge}<div class="card-time">${x.date.slice(0,10)}</div></div></div>`;});
   return h;
 }
 function calcPL(history){
