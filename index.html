@@ -156,7 +156,7 @@ async function loadData(){
   const _seenRacing=new Set();
   allData.racing=_rawRacing.filter(x=>{if(!x.winner||!x.race)return false;const k=x.race+'|'+x.winner;if(_seenRacing.has(k))return false;_seenRacing.add(k);return true;});
   //allData.racing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winner:r[2]||'',odds:r[3]||'',eachWay:r[4]||'',ewPlaceTerms:r[5]||'',aiConf:parseInt(r[6])||0,going:r[7]||'',ewResult:r[8]||'',ewRec:r[9]||'',winVsEwEv:r[10]||'',placeProb:r[11]||'',distance:r[12]||'',actual:r[13]||'',result:r[14]||'PENDING',time:r[15]||''}));
-    allData.history=historyRows.map(r=>({date:r[0]||'',sport:r[1]||'',team:r[2]||'',opponent:r[3]||'',winner:r[4]||'',odds:r[5]||'',aiConf:parseInt(r[6])||0,actual:r[8]||'',result:r[9]||'PENDING'}));
+    allData.history=historyRows.map(r=>({date:r[0]||'',sport:r[1]||'',team:r[2]||'',opponent:r[3]||'',winPick:r[4]||'',ewPick:r[5]||'',aiConf:parseInt(r[6])||0,actual:r[8]||'',result:r[9]||'PENDING',get winner(){return this.sport==='RACING'&&this.ewPick?this.ewPick.split(' at ')[0].trim():this.winPick;}}));
     const stats={};
     allData.history.forEach(p=>{
     const s=p.sport||'ALL';
@@ -223,7 +223,10 @@ function renderHistory(){
       ?`<span style="color:var(--green);font-size:11px;font-weight:500">✓ ${_r}</span>`
       :_r==='INCORRECT'||_r==='UNPLACED'
       ?`<span style="color:var(--red);font-size:11px;font-weight:500">✗ ${_r}</span>`
-      :`<span style="color:var(--muted);font-size:11px">⏳ PENDING</span>`;h+=`<div class="card"><div class="card-sport">${s}</div><div class="card-winner">${x.winner}</div><div class="card-meta"><div class="conf-bar-wrap"><div class="conf-label">CONFIDENCE</div><div class="conf-bar"><div class="conf-fill" style="width:${x.aiConf}%;background:${x.aiConf>=70?'var(--green)':x.aiConf>=45?'var(--amber)':'var(--red)'}"></div></div></div><div class="conf-pct" style="color:${x.aiConf>=70?'var(--green)':x.aiConf>=45?'var(--amber)':'var(--red)'}">${x.aiConf}%</div>${resultBadge}<div class="card-time">${x.date.slice(0,10)}</div></div></div>`;});
+      :`<span style="color:var(--muted);font-size:11px">⏳ PENDING</span>`;const ewOdds=x.sport==='RACING'&&x.ewPick?x.ewPick.match(/at ([\d\/]+)/)?.[1]||'':'';
+    const oddsTag=ewOdds?`<span class="odds"> ${ewOdds}</span>`:'';
+    const ewLabel=x.sport==='RACING'?`<span style="font-size:9px;color:var(--muted);letter-spacing:1px;margin-left:6px">E/W</span>`:'';
+    h+=`<div class="card"><div class="card-sport">${s}</div><div class="card-winner">${x.winner}${oddsTag}${ewLabel}</div><div class="card-meta"><div class="conf-bar-wrap"><div class="conf-label">CONFIDENCE</div><div class="conf-bar"><div class="conf-fill" style="width:${x.aiConf}%;background:${x.aiConf>=70?'var(--green)':x.aiConf>=45?'var(--amber)':'var(--red)'}"></div></div></div><div class="conf-pct" style="color:${x.aiConf>=70?'var(--green)':x.aiConf>=45?'var(--amber)':'var(--red)'}">${x.aiConf}%</div>${resultBadge}<div class="card-time">${x.date.slice(0,10)}</div></div></div>`;});
   return h;
 }
 function calcPL(history){
