@@ -156,7 +156,7 @@ async function loadData(){
   const _seenRacing=new Set();
   allData.racing=_rawRacing.filter(x=>{if(!x.winner||!x.race)return false;const k=x.race+'|'+x.winner;if(_seenRacing.has(k))return false;_seenRacing.add(k);return true;});
   //allData.racing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winner:r[2]||'',odds:r[3]||'',eachWay:r[4]||'',ewPlaceTerms:r[5]||'',aiConf:parseInt(r[6])||0,going:r[7]||'',ewResult:r[8]||'',ewRec:r[9]||'',winVsEwEv:r[10]||'',placeProb:r[11]||'',distance:r[12]||'',actual:r[13]||'',result:r[14]||'PENDING',time:r[15]||''}));
-    allData.history=historyRows.map(r=>({date:r[0]||'',sport:r[1]||'',team:r[2]||'',opponent:r[3]||'',winPick:r[4]||'',ewPick:r[5]||'',aiConf:parseInt(r[6])||0,actual:r[8]||'',result:r[9]||'PENDING',get winner(){return this.sport==='RACING'&&this.ewPick?this.ewPick.split(' at ')[0].trim():this.winPick;}}));
+    allData.history=historyRows.map(r=>({date:r[0]||'',sport:r[1]||'',team:r[2]||'',opponent:r[3]||'',winPick:r[4]||'',ewPick:r[5]||'',aiConf:parseInt(r[6])||0,actual:r[8]||'',result:r[9]||'PENDING',get winner(){const ep=this.ewPick?this.ewPick.split(' at ')[0].trim():'';return this.sport==='RACING'&&ep&&ep.toLowerCase()!=='none'?ep:this.winPick;}}));
     const stats={};
     allData.history.forEach(p=>{
     const s=p.sport||'ALL';
@@ -225,7 +225,7 @@ function renderHistory(){
       ?`<span style="color:var(--red);font-size:11px;font-weight:500">✗ ${_r}</span>`
       :`<span style="color:var(--muted);font-size:11px">⏳ PENDING</span>`;const ewOdds=x.sport==='RACING'&&x.ewPick?x.ewPick.match(/at ([\d\/]+)/)?.[1]||'':'';
     const oddsTag=ewOdds?`<span class="odds"> ${ewOdds}</span>`:'';
-    const ewLabel=x.sport==='RACING'?`<span style="font-size:9px;color:var(--muted);letter-spacing:1px;margin-left:6px">E/W</span>`:'';
+    const ewLabel=x.sport==='RACING'&&x.ewPick&&x.ewPick.toLowerCase()!=='none'?`<span style="font-size:9px;color:var(--muted);letter-spacing:1px;margin-left:6px">E/W</span>`:'';
     h+=`<div class="card"><div class="card-sport">${s}</div><div class="card-winner">${x.winner}${oddsTag}${ewLabel}</div><div class="card-meta"><div class="conf-bar-wrap"><div class="conf-label">CONFIDENCE</div><div class="conf-bar"><div class="conf-fill" style="width:${x.aiConf}%;background:${x.aiConf>=70?'var(--green)':x.aiConf>=45?'var(--amber)':'var(--red)'}"></div></div></div><div class="conf-pct" style="color:${x.aiConf>=70?'var(--green)':x.aiConf>=45?'var(--amber)':'var(--red)'}">${x.aiConf}%</div>${resultBadge}<div class="card-time">${x.date.slice(0,10)}</div></div></div>`;});
   return h;
 }
@@ -341,20 +341,39 @@ function renderAccas(){
   const todayAccas = allData.accas.filter(a=>a.date===today);
   if(!todayAccas.length) return empty('🎯','NO ACCAS TODAY','Check back after the daily sweep');
 
-  // Top picks from MLB and Racing
+  // Top picks — sorted by value rating then confidence, value picks only
+  const VALUE_RANK = {"STRONG VALUE":4,"VALUE":3,"MARGINAL":2,"FAIR":1,"NO VALUE":0};
   const allPreds = [...allData.mlb,...allData.racing];
-  const topPicks = allPreds.filter(x=>x.blended||x.aiConf).sort((a,b)=>(b.blended||b.aiConf)-(a.blended||a.aiConf)).slice(0,5);
+  const topPicks = allPreds
+    .filter(x=>{
+      const vr = VALUE_RANK[x.valueRating]||0;
+      const isRacing = !x.opponent;
+      if(isRacing) return (x.ewRec==='E/W'||x.ewRec==='WIN') && vr>=1;
+      return vr>=1;
+    })
+    .sort((a,b)=>{
+      const va=VALUE_RANK[a.valueRating]||0, vb=VALUE_RANK[b.valueRating]||0;
+      if(vb!==va) return vb-va;
+      return (b.blended||b.aiConf||0)-(a.blended||a.aiConf||0);
+    })
+    .slice(0,5);
 
-  let h = '<div class="section-header">TOP PICKS TODAY</div>';
+  let h = '<div class="section-header">TOP VALUE PICKS TODAY</div>';
+  if(!topPicks.length) h += '<div style="color:var(--muted);font-size:13px;padding:12px 0">No value picks today — check back after the sweep</div>';
   topPicks.forEach((x,i)=>{
-    const conf = x.blended||x.aiConf||0;
-    const col  = conf>=70?'var(--green)':conf>=55?'var(--amber)':'var(--red)';
-    const sport = x.opponent?'⚾':'🐎';
-    const name  = x.winner||'';
-    const sub   = x.opponent?`${x.opponent} @ ${x.team}`:x.race||'';
-    h+=`<div style="background:var(--card);border:1px solid var(--border);border-left:3px solid ${col};border-radius:8px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
-      <div><div style="font-size:10px;color:var(--muted);margin-bottom:3px">${sport} ${sub}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:18px">${name}</div></div>
-      <div style="font-size:22px;font-family:'Bebas Neue',sans-serif;color:${col}">${conf}%</div>
+    const conf   = x.blended||x.aiConf||0;
+    const vr     = x.valueRating||'';
+    const col    = vr==='STRONG VALUE'?'var(--green)':vr==='VALUE'?'var(--green)':vr==='MARGINAL'?'var(--amber)':'var(--muted)';
+    const sport  = x.opponent?'⚾':'🐎';
+    const name   = x.winner||'';
+    const sub    = x.opponent?`${x.opponent} @ ${x.team}`:x.race||'';
+    const edge   = x.valueEdge?`Edge: ${x.valueEdge}`:'';
+    h+=`<div style="background:var(--card);border:1px solid var(--border);border-left:3px solid ${col};border-radius:8px;padding:12px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:3px">${sport} ${sub}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:18px">${name}</div></div>
+        <div style="text-align:right"><div style="font-size:18px;font-family:'Bebas Neue',sans-serif;color:${col}">${conf}%</div><div style="font-size:10px;color:${col}">${vr}</div></div>
+      </div>
+      ${edge?`<div style="font-size:11px;color:var(--muted);margin-top:4px">${edge}</div>`:''}
     </div>`;
   });
 
