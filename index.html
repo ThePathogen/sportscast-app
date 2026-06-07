@@ -459,21 +459,29 @@ function renderAnalyticsDrawer(d){
     });
   }
 
-  h += `<div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--muted);text-align:center;margin-top:10px">Updated: ${d.generated||'—'}</div>`;
+  h += `<div style="font-family:monospace;font-size:8px;color:var(--muted);text-align:center;margin-top:10px">Updated: ${d.generated||'—'}</div>`;
 
   el.innerHTML = h;
 }
 
 async function loadAnalytics(){
   try {
-    const r = await fetch('analytics.json?t=' + Date.now());
-    if(!r.ok) return;
-    analyticsData = await r.json();
+    const url = 'analytics.json?t=' + Date.now();
+    const r = await fetch(url, {cache:'no-store'});
+    if(!r.ok){
+      document.getElementById('analytics-inner').innerHTML = 
+        '<div style="color:var(--muted);font-family:monospace;font-size:10px;text-align:center;padding:12px">No analytics data yet — run analytics.bat</div>';
+      return;
+    }
+    const text = await r.text();
+    analyticsData = JSON.parse(text);
     const ts = document.getElementById('analytics-ts');
     if(ts && analyticsData.generated) ts.textContent = analyticsData.generated;
-    if(analyticsOpen) renderAnalyticsDrawer(analyticsData);
+    // Pre-render so it's ready when opened
+    renderAnalyticsDrawer(analyticsData);
   } catch(e) {
-    // analytics.json not found — silent fail
+    document.getElementById('analytics-inner').innerHTML = 
+      '<div style="color:var(--muted);font-family:monospace;font-size:10px;text-align:center;padding:12px">No analytics data yet — run analytics.bat</div>';
   }
 }
 
