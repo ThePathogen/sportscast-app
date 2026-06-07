@@ -47,6 +47,24 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .badge.incorrect{color:var(--red);border-color:var(--red);background:rgba(255,61,61,0.08)}
 .card-time{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-left:auto}
 .empty{text-align:center;padding:48px 24px;color:var(--muted)}
+.analytics-handle{display:flex;align-items:center;justify-content:center;gap:6px;padding:4px 0 2px;cursor:pointer;user-select:none;-webkit-user-select:none}
+.analytics-handle-bar{width:32px;height:3px;background:var(--border);border-radius:2px;transition:background 0.2s}
+.analytics-handle:active .analytics-handle-bar{background:var(--green)}
+.analytics-drawer{max-height:0;overflow:hidden;transition:max-height 0.35s cubic-bezier(0.4,0,0.2,1);background:var(--surface);border-bottom:1px solid var(--border)}
+.analytics-drawer.open{max-height:600px}
+.analytics-inner{padding:12px 16px 16px}
+.analytics-title{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.analytics-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.analytics-section{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin:10px 0 6px;border-top:1px solid var(--border);padding-top:8px}
+.analytics-row{display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(30,42,30,0.5)}
+.analytics-key{font-family:'DM Mono',monospace;font-size:10px;color:var(--text)}
+.analytics-val{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px}
+.analytics-bar-wrap{flex:1;margin:0 8px;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.analytics-bar-fill{height:100%;border-radius:2px;transition:width 0.6s ease}
+.analytics-mini-stat{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center}
+.analytics-mini-val{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px}
+.analytics-mini-label{font-family:'DM Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:1px;margin-top:2px}
+.n-min{color:var(--muted);font-size:9px;margin-left:4px}
 .empty-icon{font-size:48px;margin-bottom:12px}
 .empty-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;margin-bottom:6px}
 .empty-sub{font-size:13px;line-height:1.5}
@@ -82,8 +100,16 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 <div class="header">
   <div class="header-top">
     <div class="logo">Sports<span style="color:#ffffff">Cast</span></div>
+    <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px" id="analytics-ts"></div>
   </div>
-
+  <div class="analytics-handle" onclick="toggleAnalytics()" id="analytics-handle">
+    <div class="analytics-handle-bar"></div>
+  </div>
+</div>
+<div class="analytics-drawer" id="analytics-drawer">
+  <div class="analytics-inner" id="analytics-inner">
+    <div style="color:var(--muted);font-family:'DM Mono',monospace;font-size:10px;text-align:center;padding:12px">Loading analytics…</div>
+  </div>
 </div>
 <div class="content" id="content">
   <div class="loading"><div class="dot-pulse"><span></span><span></span><span></span></div> LOADING</div>
@@ -332,6 +358,125 @@ function renderStats(){
 }
 function renderSetupPrompt(){document.getElementById('content').innerHTML=`<div style="padding:24px 0"><div class="empty"><div class="empty-icon">⚙️</div><div class="empty-title">SETUP REQUIRED</div><div class="empty-sub" style="margin-bottom:20px">Connect your Google Sheet to see predictions on your phone</div></div><div class="setup-hint" onclick="openConfig()">Tap here to enter your Google Sheets ID and API Key →</div></div>`;}
 function renderError(m){document.getElementById('content').innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-title">LOAD ERROR</div><div class="empty-sub">${m}<br><br>Check your Sheet ID and API Key in Setup</div></div>`;}
+// ── Analytics Drawer ─────────────────────────────────────────────────────────
+let analyticsOpen = false;
+let analyticsData = null;
+
+function toggleAnalytics(){
+  analyticsOpen = !analyticsOpen;
+  const drawer = document.getElementById('analytics-drawer');
+  drawer.classList.toggle('open', analyticsOpen);
+  if(analyticsOpen && analyticsData) renderAnalyticsDrawer(analyticsData);
+}
+
+function colourForPct(pct, baseline){
+  if(!baseline) return pct >= 50 ? 'var(--green)' : pct >= 33 ? 'var(--amber)' : 'var(--red)';
+  const diff = pct - baseline;
+  return diff >= 10 ? 'var(--green)' : diff >= 0 ? 'var(--amber)' : 'var(--red)';
+}
+
+function analyticsRow(label, hits, total, pct, baseline, minN){
+  if(total < (minN||3)) return `<div class="analytics-row"><span class="analytics-key">${label}</span><span class="n-min">${total} results (need ${minN||5}+)</span></div>`;
+  const col = colourForPct(pct, baseline);
+  const fillW = Math.round(pct);
+  return `<div class="analytics-row">
+    <span class="analytics-key">${label}</span>
+    <div class="analytics-bar-wrap"><div class="analytics-bar-fill" style="width:${fillW}%;background:${col}"></div></div>
+    <span class="analytics-val" style="color:${col}">${pct.toFixed(0)}%</span>
+    <span class="n-min">${hits}/${total}</span>
+  </div>`;
+}
+
+function renderAnalyticsDrawer(d){
+  const el = document.getElementById('analytics-inner');
+  if(!el || !d) return;
+  const ew = d.ew || {};
+  const mlb = d.mlb || {};
+  const ewBase = ew.place_rate || 0;
+  const mlbBase = mlb.accuracy || 0;
+
+  let h = '';
+
+  // Mini stats row
+  h += `<div class="analytics-grid">
+    <div class="analytics-mini-stat">
+      <div class="analytics-mini-val" style="color:var(--green)">${(ew.place_rate||0).toFixed(0)}%</div>
+      <div class="analytics-mini-label">E/W PLACE RATE<br><span style="color:var(--muted);font-size:7px">${ew.total||0} settled</span></div>
+    </div>
+    <div class="analytics-mini-stat">
+      <div class="analytics-mini-val" style="color:var(--green)">${(mlb.accuracy||0).toFixed(0)}%</div>
+      <div class="analytics-mini-label">MLB ACCURACY<br><span style="color:var(--muted);font-size:7px">${mlb.total||0} settled</span></div>
+    </div>
+  </div>`;
+
+  // E/W by distance
+  const dist = ew.by_distance || {};
+  const distKeys = Object.keys(dist).sort((a,b) => dist[b].total - dist[a].total);
+  if(distKeys.length){
+    h += '<div class="analytics-section">🐎 E/W BY DISTANCE</div>';
+    distKeys.forEach(k => {
+      const v = dist[k];
+      h += analyticsRow(k, v.hits, v.total, v.pct, ewBase, 3);
+    });
+  }
+
+  // E/W by going
+  const going = ew.by_going || {};
+  const goingKeys = Object.keys(going).sort((a,b) => going[b].total - going[a].total);
+  if(goingKeys.length){
+    h += '<div class="analytics-section">⛅ E/W BY GOING</div>';
+    goingKeys.forEach(k => {
+      const v = going[k];
+      const label = k.length > 20 ? k.substring(0,18)+'…' : k;
+      h += analyticsRow(label, v.hits, v.total, v.pct, ewBase, 3);
+    });
+  }
+
+  // E/W by confidence
+  const ewConf = ew.by_conf || {};
+  if(Object.keys(ewConf).length){
+    h += '<div class="analytics-section">📊 E/W BY CONFIDENCE</div>';
+    ['70%+','60-70%','50-60%','<50%'].forEach(k => {
+      if(ewConf[k]) h += analyticsRow(k, ewConf[k].hits, ewConf[k].total, ewConf[k].pct, ewBase, 3);
+    });
+  }
+
+  // E/W by value rating
+  const ewVal = ew.by_value || {};
+  if(Object.keys(ewVal).length){
+    h += '<div class="analytics-section">💎 E/W BY VALUE RATING</div>';
+    ['STRONG VALUE','VALUE','MARGINAL','FAIR','NO VALUE'].forEach(k => {
+      if(ewVal[k]) h += analyticsRow(k, ewVal[k].hits, ewVal[k].total, ewVal[k].pct, ewBase, 3);
+    });
+  }
+
+  // MLB by confidence
+  const mlbConf = mlb.by_conf || {};
+  if(Object.keys(mlbConf).length){
+    h += '<div class="analytics-section">⚾ MLB BY CONFIDENCE</div>';
+    ['70%+','60-70%','50-60%','<50%'].forEach(k => {
+      if(mlbConf[k]) h += analyticsRow(k, mlbConf[k].hits, mlbConf[k].total, mlbConf[k].pct, mlbBase, 3);
+    });
+  }
+
+  h += `<div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--muted);text-align:center;margin-top:10px">Updated: ${d.generated||'—'}</div>`;
+
+  el.innerHTML = h;
+}
+
+async function loadAnalytics(){
+  try {
+    const r = await fetch('analytics.json?t=' + Date.now());
+    if(!r.ok) return;
+    analyticsData = await r.json();
+    const ts = document.getElementById('analytics-ts');
+    if(ts && analyticsData.generated) ts.textContent = analyticsData.generated;
+    if(analyticsOpen) renderAnalyticsDrawer(analyticsData);
+  } catch(e) {
+    // analytics.json not found — silent fail
+  }
+}
+
 function render(){let h='';if(currentTab==='mlb')h=renderMLB();else if(currentTab==='racing')h=renderRacing();else if(currentTab==='history')h=renderHistory();else if(currentTab==='accas')h=renderAccas();else if(currentTab==='stats')h=renderStats();document.getElementById('content').innerHTML=h;}
 function renderAccas(){
   if(!allData.accas||!allData.accas.length) return empty('🎯','NO ACCAS YET','Run the daily sweep to generate accumulators');
@@ -398,7 +543,7 @@ function switchTab(tab,el,nav){
   if(nav)nav.classList.add('active');
   render();
 }
-if(SHEET_ID&&API_KEY)loadData();else renderSetupPrompt();
+if(SHEET_ID&&API_KEY)loadData();else renderSetupPrompt(); loadAnalytics();
 </script>
 </body>
 </html>
