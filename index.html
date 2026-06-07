@@ -50,7 +50,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .analytics-handle{display:flex;align-items:center;justify-content:center;gap:6px;padding:4px 0 2px;cursor:pointer;user-select:none;-webkit-user-select:none}
 .analytics-handle-bar{width:32px;height:3px;background:var(--border);border-radius:2px;transition:background 0.2s}
 .analytics-handle:active .analytics-handle-bar{background:var(--green)}
-.analytics-drawer{max-height:0;overflow:hidden;transition:max-height 0.35s cubic-bezier(0.4,0,0.2,1);background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:69px;z-index:99}
+.analytics-drawer{max-height:0;overflow:hidden;transition:max-height 0.35s cubic-bezier(0.4,0,0.2,1);background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:98}
 .analytics-drawer.open{max-height:40vh}
 .analytics-inner{padding:12px 16px 16px;overflow-y:auto;max-height:40vh;-webkit-overflow-scrolling:touch}
 .analytics-title{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
@@ -384,6 +384,8 @@ function initResize(){
     const newH = Math.max(80, Math.min(window.innerHeight * 0.75, _resizeStartH + diff));
     inner.style.maxHeight = newH + 'px';
     drawer.style.maxHeight = (newH + 20) + 'px';
+    const ct = document.getElementById('content');
+    if(ct) ct.style.paddingTop = drawer.getBoundingClientRect().height + 'px';
     e.preventDefault();
   }
   function onEnd(){ _resizing = false; }
@@ -402,9 +404,16 @@ let analyticsData = null;
 
 function toggleAnalytics(){
   analyticsOpen = !analyticsOpen;
-  const drawer = document.getElementById('analytics-drawer');
+  const drawer  = document.getElementById('analytics-drawer');
+  const content = document.getElementById('content');
   drawer.classList.toggle('open', analyticsOpen);
   if(analyticsOpen && analyticsData) renderAnalyticsDrawer(analyticsData);
+  // Give the drawer time to open then measure its height
+  setTimeout(() => {
+    if(content){
+      content.style.paddingTop = analyticsOpen ? (drawer.getBoundingClientRect().height + 'px') : '0';
+    }
+  }, 360);
 }
 
 function colourForPct(pct, baseline){
