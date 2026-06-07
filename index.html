@@ -50,9 +50,9 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .analytics-handle{display:flex;align-items:center;justify-content:center;gap:6px;padding:4px 0 2px;cursor:pointer;user-select:none;-webkit-user-select:none}
 .analytics-handle-bar{width:32px;height:3px;background:var(--border);border-radius:2px;transition:background 0.2s}
 .analytics-handle:active .analytics-handle-bar{background:var(--green)}
-.analytics-drawer{max-height:0;overflow:hidden;transition:max-height 0.35s cubic-bezier(0.4,0,0.2,1);background:var(--surface);border-bottom:1px solid var(--border)}
-.analytics-drawer.open{max-height:55vh}
-.analytics-inner{padding:12px 16px 16px;overflow-y:auto;max-height:55vh;-webkit-overflow-scrolling:touch}
+.analytics-drawer{max-height:0;overflow:hidden;transition:max-height 0.35s cubic-bezier(0.4,0,0.2,1);background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:69px;z-index:99}
+.analytics-drawer.open{max-height:40vh}
+.analytics-inner{padding:12px 16px 16px;overflow-y:auto;max-height:40vh;-webkit-overflow-scrolling:touch}
 .analytics-title{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
 .analytics-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
 .analytics-section{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin:10px 0 6px;border-top:1px solid var(--border);padding-top:8px}
@@ -62,6 +62,8 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .analytics-bar-wrap{flex:1;margin:0 8px;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
 .analytics-bar-fill{height:100%;border-radius:2px;transition:width 0.6s ease}
 .analytics-mini-stat{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center}
+.analytics-resize{display:flex;align-items:center;justify-content:center;padding:6px 0 2px;cursor:ns-resize;touch-action:none}
+.analytics-resize-bar{width:40px;height:4px;background:var(--border);border-radius:2px}
 .analytics-mini-val{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px}
 .analytics-mini-label{font-family:'DM Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:1px;margin-top:2px}
 .n-min{color:var(--muted);font-size:9px;margin-left:4px}
@@ -109,7 +111,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 <div class="analytics-drawer" id="analytics-drawer">
   <div class="analytics-inner" id="analytics-inner">
     <div style="color:var(--muted);font-family:'DM Mono',monospace;font-size:10px;text-align:center;padding:12px">Loading analytics…</div>
-  </div>
+    <div class="analytics-resize" id="analytics-resize"><div class="analytics-resize-bar"></div></div>
 </div>
 <div class="content" id="content">
   <div class="loading"><div class="dot-pulse"><span></span><span></span><span></span></div> LOADING</div>
@@ -359,6 +361,42 @@ function renderStats(){
 function renderSetupPrompt(){document.getElementById('content').innerHTML=`<div style="padding:24px 0"><div class="empty"><div class="empty-icon">⚙️</div><div class="empty-title">SETUP REQUIRED</div><div class="empty-sub" style="margin-bottom:20px">Connect your Google Sheet to see predictions on your phone</div></div><div class="setup-hint" onclick="openConfig()">Tap here to enter your Google Sheets ID and API Key →</div></div>`;}
 function renderError(m){document.getElementById('content').innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-title">LOAD ERROR</div><div class="empty-sub">${m}<br><br>Check your Sheet ID and API Key in Setup</div></div>`;}
 // ── Analytics Drawer ─────────────────────────────────────────────────────────
+// Resize handle
+let _resizing = false, _resizeStartY = 0, _resizeStartH = 0;
+
+function initResize(){
+  const handle = document.getElementById('analytics-resize');
+  const drawer = document.getElementById('analytics-drawer');
+  const inner  = document.getElementById('analytics-inner');
+  if(!handle || !drawer) return;
+
+  function onStart(e){
+    if(!analyticsOpen) return;
+    _resizing = true;
+    _resizeStartY = e.touches ? e.touches[0].clientY : e.clientY;
+    _resizeStartH = inner.getBoundingClientRect().height;
+    e.preventDefault();
+  }
+  function onMove(e){
+    if(!_resizing) return;
+    const y = e.touches ? e.touches[0].clientY : e.clientY;
+    const diff = y - _resizeStartY;
+    const newH = Math.max(80, Math.min(window.innerHeight * 0.75, _resizeStartH + diff));
+    inner.style.maxHeight = newH + 'px';
+    drawer.style.maxHeight = (newH + 20) + 'px';
+    e.preventDefault();
+  }
+  function onEnd(){ _resizing = false; }
+
+  handle.addEventListener('touchstart', onStart, {passive:false});
+  handle.addEventListener('mousedown',  onStart);
+  window.addEventListener('touchmove',  onMove,  {passive:false});
+  window.addEventListener('mousemove',  onMove);
+  window.addEventListener('touchend',   onEnd);
+  window.addEventListener('mouseup',    onEnd);
+}
+
+
 let analyticsOpen = false;
 let analyticsData = null;
 
@@ -560,7 +598,7 @@ function switchTab(tab,el,nav){
   if(nav)nav.classList.add('active');
   render();
 }
-if(SHEET_ID&&API_KEY)loadData();else renderSetupPrompt(); loadAnalytics();
+if(SHEET_ID&&API_KEY)loadData();else renderSetupPrompt(); loadAnalytics(); initResize();
 </script>
 </body>
 </html>
