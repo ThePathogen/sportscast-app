@@ -452,10 +452,19 @@ function renderAnalyticsDrawer(d){
 
   // MLB by confidence
   const mlbConf = mlb.by_conf || {};
+  const mlbVal = mlb.by_value || {};
   if(Object.keys(mlbConf).length){
-    h += '<div class="analytics-section">⚾ MLB BY CONFIDENCE</div>';
+    h += `<div class="analytics-section">⚾ MLB — ${(mlb.accuracy||0).toFixed(0)}% ACCURACY (${mlb.total||0} games)</div>`;
+    h += '<div class="analytics-section" style="margin-top:4px;border:none;padding:0;font-size:8px">BY CONFIDENCE</div>';
     ['70%+','60-70%','50-60%','<50%'].forEach(k => {
       if(mlbConf[k]) h += analyticsRow(k, mlbConf[k].hits, mlbConf[k].total, mlbConf[k].pct, mlbBase, 3);
+    });
+  }
+  // MLB by value rating
+  if(Object.keys(mlbVal).length){
+    h += '<div class="analytics-section" style="margin-top:4px;border:none;padding:0;font-size:8px">BY VALUE RATING</div>';
+    ['STRONG VALUE','VALUE','MARGINAL','FAIR','NO VALUE'].forEach(k => {
+      if(mlbVal[k]) h += analyticsRow(k, mlbVal[k].hits, mlbVal[k].total, mlbVal[k].pct, mlbBase, 3);
     });
   }
 
