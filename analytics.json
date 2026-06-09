@@ -1,19 +1,24 @@
 {
-  "generated": "2026-06-07 23:12",
+  "generated": "2026-06-09 22:35",
   "ew": {
-    "total": 91,
-    "placed": 38,
-    "place_rate": 41.8,
+    "total": 118,
+    "placed": 51,
+    "place_rate": 43.2,
     "by_value": {
       "STRONG VALUE": {
-        "hits": 13,
-        "total": 30,
-        "pct": 43.3
+        "hits": 17,
+        "total": 38,
+        "pct": 44.7
+      },
+      "VALUE": {
+        "hits": 0,
+        "total": 1,
+        "pct": 0.0
       },
       "NO VALUE": {
-        "hits": 25,
-        "total": 61,
-        "pct": 41.0
+        "hits": 34,
+        "total": 79,
+        "pct": 43.0
       }
     },
     "by_conf": {
@@ -23,18 +28,18 @@
         "pct": 58.3
       },
       "60-70%": {
-        "hits": 29,
-        "total": 70,
-        "pct": 41.4
+        "hits": 41,
+        "total": 93,
+        "pct": 44.1
       },
       "50-60%": {
         "hits": 0,
-        "total": 3,
+        "total": 4,
         "pct": 0.0
       },
       "<50%": {
-        "hits": 2,
-        "total": 6,
+        "hits": 3,
+        "total": 9,
         "pct": 33.3
       }
     },
@@ -45,13 +50,13 @@
         "pct": 0.0
       },
       "5f": {
-        "hits": 4,
-        "total": 13,
-        "pct": 30.8
+        "hits": 9,
+        "total": 24,
+        "pct": 37.5
       },
       "1m2f": {
-        "hits": 2,
-        "total": 2,
+        "hits": 4,
+        "total": 4,
         "pct": 100.0
       },
       "2m": {
@@ -70,9 +75,9 @@
         "pct": 100.0
       },
       "7f": {
-        "hits": 2,
-        "total": 6,
-        "pct": 33.3
+        "hits": 5,
+        "total": 12,
+        "pct": 41.7
       },
       "1m": {
         "hits": 2,
@@ -80,9 +85,9 @@
         "pct": 66.7
       },
       "6f": {
-        "hits": 1,
-        "total": 5,
-        "pct": 20.0
+        "hits": 2,
+        "total": 8,
+        "pct": 25.0
       },
       "1m4f": {
         "hits": 0,
@@ -90,14 +95,14 @@
         "pct": 0.0
       },
       "1m1f": {
-        "hits": 0,
-        "total": 2,
-        "pct": 0.0
+        "hits": 2,
+        "total": 6,
+        "pct": 33.3
       },
       "1m3f": {
         "hits": 1,
-        "total": 1,
-        "pct": 100.0
+        "total": 2,
+        "pct": 50.0
       },
       "1m5f": {
         "hits": 1,
@@ -112,9 +117,9 @@
         "pct": 43.5
       },
       "Good To Soft": {
-        "hits": 4,
-        "total": 8,
-        "pct": 50.0
+        "hits": 8,
+        "total": 15,
+        "pct": 53.3
       },
       "Good To Firm": {
         "hits": 1,
@@ -125,18 +130,33 @@
         "hits": 2,
         "total": 7,
         "pct": 28.6
+      },
+      "Good To Firm (Good in places)": {
+        "hits": 4,
+        "total": 8,
+        "pct": 50.0
+      },
+      "Good (Good to Soft in places)": {
+        "hits": 3,
+        "total": 6,
+        "pct": 50.0
+      },
+      "SOFT": {
+        "hits": 2,
+        "total": 6,
+        "pct": 33.3
       }
     }
   },
   "mlb": {
-    "total": 118,
-    "correct": 71,
-    "accuracy": 60.2,
+    "total": 120,
+    "correct": 72,
+    "accuracy": 60.0,
     "by_value": {
       "STRONG VALUE": {
-        "hits": 2,
-        "total": 6,
-        "pct": 33.3
+        "hits": 3,
+        "total": 7,
+        "pct": 42.9
       },
       "VALUE": {
         "hits": 5,
@@ -155,8 +175,8 @@
       },
       "NO VALUE": {
         "hits": 48,
-        "total": 79,
-        "pct": 60.8
+        "total": 80,
+        "pct": 60.0
       }
     },
     "by_conf": {
@@ -171,9 +191,9 @@
         "pct": 73.7
       },
       "50-60%": {
-        "hits": 12,
-        "total": 22,
-        "pct": 54.5
+        "hits": 13,
+        "total": 24,
+        "pct": 54.2
       },
       "<50%": {
         "hits": 37,
