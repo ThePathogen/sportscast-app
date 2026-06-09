@@ -172,7 +172,7 @@ async function loadData(){
     const[mlbRows,racingRows,historyRows,betsRows,accaRows]=await Promise.all([
       fetchSheet('Daily Summary','A4:S200'),
       fetchSheet('Racing','A3:S200'),
-      fetchSheet('History','A5:K500'),
+      fetchSheet('History','A5:K2000'),
       fetchSheet('Bets','A2:I500').catch(()=>[]),
       fetchSheet('Accas','A2:G100').catch(()=>[]),
     ]);
@@ -243,7 +243,8 @@ function renderRacing(){
   return h;
 }
 function renderHistory(){
-  const d=allData.history.slice().reverse().slice(0,50);if(!d.length)return empty('📋','NO HISTORY YET','Make some predictions to build your history');
+  const _twoDaysAgo=new Date(Date.now()-2*24*60*60*1000).toISOString().slice(0,10);
+  const d=allData.history.filter(x=>x.date>=_twoDaysAgo).slice().reverse();if(!d.length)return empty('📋','NO HISTORY YET','Make some predictions to build your history');
   let h='<div class="section-header">RECENT PREDICTIONS</div>';
   d.forEach(x=>{const s=x.sport==='RACING'?x.team:(x.opponent?`${x.opponent} @ ${x.team}`:x.team);const _r=x.result||'';
     const resultBadge=_r==='CORRECT'||_r==='PLACED'||_r==='WIN PLACED'
