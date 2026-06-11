@@ -518,18 +518,22 @@ function renderAccas(){
 
   // Top picks from MLB and Racing
   const allPreds = [...allData.mlb,...allData.racing];
-  const topPicks = allPreds.filter(x=>x.blended||x.aiConf).sort((a,b)=>(b.blended||b.aiConf)-(a.blended||a.aiConf)).slice(0,5);
+  const topPicks = allPreds.filter(x=>(x.blended||x.aiConf)>=55).sort((a,b)=>(b.blended||b.aiConf)-(a.blended||a.aiConf)).slice(0,6);
 
-  let h = '<div class="section-header">TOP PICKS TODAY</div>';
+  let h = '<div class="section-header">TOP CONFIDENCE PICKS TODAY</div>';
+  if(!topPicks.length) h += '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">No picks above 55% confidence today</div>';
   topPicks.forEach((x,i)=>{
-    const conf = x.blended||x.aiConf||0;
-    const col  = conf>=70?'var(--green)':conf>=55?'var(--amber)':'var(--red)';
-    const sport = x.opponent?'⚾':'🐎';
-    const name  = x.winner||'';
-    const sub   = x.opponent?`${x.opponent} @ ${x.team}`:x.race||'';
+    const conf    = x.blended||x.aiConf||0;
+    const col     = conf>=70?'var(--green)':conf>=55?'var(--amber)':'var(--red)';
+    const sport   = x.opponent?'⚾':'🐎';
+    const name    = x.winner||'';
+    const sub     = x.opponent?`${x.opponent} @ ${x.team}`:x.race||'';
+    const vrating = x.valueRating||'';
+    const vcol    = vrating==='STRONG VALUE'?'var(--green)':vrating==='VALUE'?'var(--amber)':'var(--muted)';
+    const vbadge  = vrating?`<span style="font-size:8px;color:${vcol};border:1px solid ${vcol};border-radius:3px;padding:1px 4px;margin-left:6px">${vrating}</span>`:'';
     h+=`<div style="background:var(--card);border:1px solid var(--border);border-left:3px solid ${col};border-radius:8px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
-      <div><div style="font-size:10px;color:var(--muted);margin-bottom:3px">${sport} ${sub}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:18px">${name}</div></div>
-      <div style="font-size:22px;font-family:'Bebas Neue',sans-serif;color:${col}">${conf}%</div>
+      <div style="flex:1"><div style="font-size:10px;color:var(--muted);margin-bottom:3px">${sport} ${sub}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:18px">${name}${vbadge}</div></div>
+      <div style="font-size:22px;font-family:'Bebas Neue',sans-serif;color:${col};margin-left:8px">${conf}%</div>
     </div>`;
   });
 
