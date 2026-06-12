@@ -171,7 +171,7 @@ async function loadData(){
   try{
     const[mlbRows,racingRows,historyRows,betsRows,accaRows]=await Promise.all([
       fetchSheet('Daily Summary','A4:S200'),
-      fetchSheet('Racing','A3:S200'),
+      fetchSheet('Racing','A3:T200'),
       fetchSheet('History','A5:K2000'),
       fetchSheet('Bets','A2:I500').catch(()=>[]),
       fetchSheet('Accas','A2:G100').catch(()=>[]),
@@ -179,7 +179,7 @@ async function loadData(){
     allData.bets=betsRows;
     allData.accas=(accaRows||[]).map(r=>({date:r[0]||'',type:r[1]||'',legs:r[2]||'',odds:r[3]||'',returns:r[4]||'',conf:r[5]||'',selections:r[6]||''}));
     allData.mlb=mlbRows.map(r=>({date:r[0]||'',sport:r[1]||'MLB',team:r[2]||'',opponent:r[3]||'',winner:r[4]||'',score:r[5]||'',aiConf:parseInt(r[6])||0,blended:parseInt(r[7])||0,actual:r[8]||'',result:r[9]||'PENDING',time:r[11]||'TBD',recommendation:r[12]||'',kellyStake:r[13]||'',fixedStake:r[14]||'',edge:r[15]||'',valueRating:r[16]||'',valueEdge:r[17]||'',valueEv:r[18]||''}));
-    const _rawRacing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winPick:r[2]||'',winOdds:r[3]||'',eachWay:r[4]||'',ewPlaceTerms:r[5]||'',aiConf:parseInt(r[6])||0,going:r[7]||'',ewResult:r[8]||'',ewRec:r[9]||'',winVsEwEv:r[10]||'',placeProb:r[11]||'',distance:r[12]||'',actual:r[13]||'',result:r[14]||'PENDING',time:r[15]||'',valueRating:r[16]||'',valueEdge:r[17]||'',valueEv:r[18]||'',kellyStake:r[19]||'',get winner(){return this.eachWay?this.eachWay.split(' at ')[0].split(' -')[0].split(',')[0].trim():this.winPick;},get odds(){return this.eachWay?this.eachWay.match(/at ([\d\/]+)/)?.[1]||this.winOdds:this.winOdds;}}));
+    const _rawRacing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winPick:r[2]||'',winOdds:r[3]||'',eachWay:r[4]||'',ewPlaceTerms:r[5]||'',aiConf:parseInt(r[6])||0,going:r[7]||'',ewResult:r[8]||'',ewRec:r[9]||'',winVsEwEv:r[10]||'',placeProb:r[11]||'',distance:r[12]||'',actual:r[13]||'',result:r[14]||'PENDING',time:r[15]||'',valueRating:r[16]||'',valueEdge:r[17]||'',valueEv:r[18]||'',kellyStake:r[19]||'',pickScore:parseFloat(r[20])||0,get winner(){return this.eachWay?this.eachWay.split(' at ')[0].split(' -')[0].split(',')[0].trim():this.winPick;},get odds(){return this.eachWay?this.eachWay.match(/at ([\d\/]+)/)?.[1]||this.winOdds:this.winOdds;}}));
   const _seenRacing=new Set();
   allData.racing=_rawRacing.filter(x=>{if(!x.winner||!x.race)return false;const k=x.race+'|'+x.winner;if(_seenRacing.has(k))return false;_seenRacing.add(k);return true;});
   //allData.racing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winner:r[2]||'',odds:r[3]||'',eachWay:r[4]||'',ewPlaceTerms:r[5]||'',aiConf:parseInt(r[6])||0,going:r[7]||'',ewResult:r[8]||'',ewRec:r[9]||'',winVsEwEv:r[10]||'',placeProb:r[11]||'',distance:r[12]||'',actual:r[13]||'',result:r[14]||'PENDING',time:r[15]||''}));
@@ -233,6 +233,8 @@ function renderRacing(){
   d.forEach(x=>{
     // E/W pick is the star — show as main card
     const ewRecCol = x.ewRec==='BET E/W'||x.ewRec==='E/W'?'var(--green)':x.ewRec==='SKIP'?'var(--muted)':'var(--amber)';
+    const scoreCol = x.pickScore>=72?'var(--green)':x.pickScore>=62?'var(--amber)':'var(--muted)';
+    const scoreBadge = x.pickScore>0?`<span style="font-size:8px;color:${scoreCol};border:1px solid ${scoreCol};border-radius:3px;padding:1px 5px;margin-left:6px">SCORE ${x.pickScore.toFixed(0)}</span>"`:'';
     // Parse odds — from eachWay string or winOdds
     const ewOddsRaw = x.odds || (x.eachWay?(x.eachWay.match(/at ([\d\/]+)/)||[])[1]||'':'') || '';
     const oddsDisplay = ewOddsRaw ? `<span style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--amber);background:rgba(255,180,0,0.1);border:1px solid rgba(255,180,0,0.3);border-radius:4px;padding:2px 7px;margin-left:6px">${ewOddsRaw}</span>` : '';
@@ -562,7 +564,7 @@ function renderAccas(){
   let h = '<div class="section-header">TOP CONFIDENCE PICKS TODAY</div>';
   if(!topPicks.length) h += '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">No picks above 55% confidence today</div>';
   topPicks.forEach((x,i)=>{
-    const conf    = x.blended||x.aiConf||0;
+    const conf    = (x.sport==='RACING'&&x.pickScore>0)?x.pickScore:(x.blended||x.aiConf||0);
     const col     = conf>=70?'var(--green)':conf>=55?'var(--amber)':'var(--red)';
     const sport   = x.opponent?'⚾':'🐎';
     const name    = x.winner||'';
