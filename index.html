@@ -490,24 +490,59 @@ function renderAnalyticsDrawer(d){
 }
 
 async function loadAnalytics(){
+  if(!SHEET_ID||!API_KEY) return;
   try {
-    const url = 'analytics.json?t=' + Date.now();
-    const r = await fetch(url, {cache:'no-store'});
-    if(!r.ok){
-      document.getElementById('analytics-inner').innerHTML = 
-        '<div style="color:var(--muted);font-family:monospace;font-size:10px;text-align:center;padding:12px">No analytics data yet — run analytics.bat</div>';
+    const rows = await fetchSheet('Analytics','A1:E200');
+    if(!rows||!rows.length){
+      document.getElementById('analytics-inner').innerHTML =
+        '<div style="color:var(--muted);font-family:monospace;font-size:10px;text-align:center;padding:12px">No analytics yet — run daily sweep</div>';
       return;
     }
-    const text = await r.text();
-    analyticsData = JSON.parse(text);
-    const ts = document.getElementById('analytics-ts');
-    if(ts && analyticsData.generated) ts.textContent = analyticsData.generated;
-    // Pre-render so it's ready when opened
+    // Parse sheet rows into analyticsData structure
+    analyticsData = parseAnalyticsSheet(rows);
     renderAnalyticsDrawer(analyticsData);
   } catch(e) {
-    document.getElementById('analytics-inner').innerHTML = 
-      '<div style="color:var(--muted);font-family:monospace;font-size:10px;text-align:center;padding:12px">No analytics data yet — run analytics.bat</div>';
+    document.getElementById('analytics-inner').innerHTML =
+      '<div style="color:var(--muted);font-family:monospace;font-size:10px;text-align:center;padding:12px">No analytics yet — run daily sweep</div>';
   }
+}
+
+function parseAnalyticsSheet(rows){
+  // Parse the flat sheet rows back into structured data
+  const data = {generated:'', ew:{total:0,placed:0,place_rate:0,by_value:{},by_conf:{},by_distance:{},by_going:{}}, mlb:{total:0,correct:0,accuracy:0,by_conf:{},by_value:{}}};
+  let section = '';
+  for(const row of rows){
+    if(!row||!row[0]) continue;
+    const key = (row[0]||'').trim();
+    const val = parseFloat((row[1]||'').replace('%',''))||0;
+    const counts = (row[2]||'');
+    const [hits, total] = counts.split('/').map(Number);
+
+    if(key === 'SPORTSCAST ANALYTICS'){ data.generated = row[1]||''; continue; }
+    if(key === 'MLB'){ section='mlb'; data.mlb.accuracy=val; data.mlb.total=total||0; data.mlb.correct=hits||0; continue; }
+    if(key === 'RACING E/W'){ section='ew'; data.ew.place_rate=val; data.ew.total=total||0; data.ew.placed=hits||0; continue; }
+    if(key === 'BY CONFIDENCE'){ section=section+'_conf'; continue; }
+    if(key === 'BY DISTANCE'){ section='ew_dist'; continue; }
+    if(key === 'BY GOING'){ section='ew_going'; continue; }
+
+    const label = key.trim();
+    if(!label||!total) continue;
+
+    if(section==='mlb'){
+      data.mlb.by_conf[label] = {pct:val, hits:hits||0, total:total||0};
+    } else if(section==='mlb_conf'){
+      data.mlb.by_conf[label] = {pct:val, hits:hits||0, total:total||0};
+    } else if(section==='ew'){
+      data.ew.by_value[label] = {pct:val, hits:hits||0, total:total||0};
+    } else if(section==='ew_conf'){
+      data.ew.by_conf[label] = {pct:val, hits:hits||0, total:total||0};
+    } else if(section==='ew_dist'){
+      data.ew.by_distance[label] = {pct:val, hits:hits||0, total:total||0};
+    } else if(section==='ew_going'){
+      data.ew.by_going[label] = {pct:val, hits:hits||0, total:total||0};
+    }
+  }
+  return data;
 }
 
 function render(){let h='';if(currentTab==='mlb')h=renderMLB();else if(currentTab==='racing')h=renderRacing();else if(currentTab==='history')h=renderHistory();else if(currentTab==='accas')h=renderAccas();else if(currentTab==='stats')h=renderStats();document.getElementById('content').innerHTML=h;}
