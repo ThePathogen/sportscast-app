@@ -508,38 +508,39 @@ async function loadAnalytics(){
 }
 
 function parseAnalyticsSheet(rows){
-  // Parse the flat sheet rows back into structured data
   const data = {generated:'', ew:{total:0,placed:0,place_rate:0,by_value:{},by_conf:{},by_distance:{},by_going:{}}, mlb:{total:0,correct:0,accuracy:0,by_conf:{},by_value:{}}};
   let section = '';
   for(const row of rows){
     if(!row||!row[0]) continue;
     const key = (row[0]||'').trim();
+    if(!key) continue;
     const val = parseFloat((row[1]||'').replace('%',''))||0;
     const counts = (row[2]||'');
-    const [hits, total] = counts.split('/').map(Number);
+    const parts = counts.split('/');
+    const hits = parseInt(parts[0])||0;
+    const total = parseInt(parts[1])||0;
 
-    if(key === 'SPORTSCAST ANALYTICS'){ data.generated = row[1]||''; continue; }
-    if(key === 'MLB'){ section='mlb'; data.mlb.accuracy=val; data.mlb.total=total||0; data.mlb.correct=hits||0; continue; }
-    if(key === 'RACING E/W'){ section='ew'; data.ew.place_rate=val; data.ew.total=total||0; data.ew.placed=hits||0; continue; }
-    if(key === 'BY CONFIDENCE'){ section=section+'_conf'; continue; }
-    if(key === 'BY DISTANCE'){ section='ew_dist'; continue; }
-    if(key === 'BY GOING'){ section='ew_going'; continue; }
+    // Section headers
+    if(key==='SPORTSCAST ANALYTICS'){ data.generated=row[1]||''; continue; }
+    if(key==='MLB'){ section='mlb_summary'; data.mlb.accuracy=val; data.mlb.total=total||0; data.mlb.correct=hits||0; continue; }
+    if(key==='RACING E/W'){ section='ew_summary'; data.ew.place_rate=val; data.ew.total=total||0; data.ew.placed=hits||0; continue; }
+    if(key==='BY CONFIDENCE'){ section=section.startsWith('mlb')?'mlb_conf':'ew_conf'; continue; }
+    if(key==='BY DISTANCE'){ section='ew_dist'; continue; }
+    if(key==='BY GOING'){ section='ew_going'; continue; }
 
-    const label = key.trim();
+    const label = key.replace(/^\s+/,'');
     if(!label||!total) continue;
 
-    if(section==='mlb'){
-      data.mlb.by_conf[label] = {pct:val, hits:hits||0, total:total||0};
-    } else if(section==='mlb_conf'){
-      data.mlb.by_conf[label] = {pct:val, hits:hits||0, total:total||0};
-    } else if(section==='ew'){
-      data.ew.by_value[label] = {pct:val, hits:hits||0, total:total||0};
+    if(section==='mlb_summary'||section==='mlb_conf'){
+      data.mlb.by_conf[label]={pct:val,hits,total};
+    } else if(section==='ew_summary'){
+      data.ew.by_value[label]={pct:val,hits,total};
     } else if(section==='ew_conf'){
-      data.ew.by_conf[label] = {pct:val, hits:hits||0, total:total||0};
+      data.ew.by_conf[label]={pct:val,hits,total};
     } else if(section==='ew_dist'){
-      data.ew.by_distance[label] = {pct:val, hits:hits||0, total:total||0};
+      data.ew.by_distance[label]={pct:val,hits,total};
     } else if(section==='ew_going'){
-      data.ew.by_going[label] = {pct:val, hits:hits||0, total:total||0};
+      data.ew.by_going[label]={pct:val,hits,total};
     }
   }
   return data;
