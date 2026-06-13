@@ -174,7 +174,7 @@ async function loadData(){
       fetchSheet('Racing','A3:T200'),
       fetchSheet('History','A5:K2000'),
       fetchSheet('Bets','A2:I500').catch(()=>[]),
-      fetchSheet('Accas','A2:G100').catch(()=>[]),
+      fetchSheet('Accas','A2:H100').catch(()=>[]),
     ]);
     allData.bets=betsRows;
     allData.accas=(accaRows||[]).map(r=>({date:r[0]||'',type:r[1]||'',legs:r[2]||'',odds:r[3]||'',returns:r[4]||'',conf:r[5]||'',combinedProb:r[6]||'',selections:(r[7]||'')}));
