@@ -220,7 +220,7 @@ async function loadData(){
 
 function confColor(p){return p>=70?'var(--green)':p>=45?'var(--amber)':'var(--red)';}
 function confClass(p){return p>=70?'high':p>=45?'medium':'low';}
-function badge(r){const u=(r||'').toUpperCase();if(u==='CORRECT'||u==='PLACED'||u==='WIN PLACED')return`<span class="badge correct">✓ ${r}</span>`;if(u==='INCORRECT'||u==='UNPLACED')return`<span class="badge incorrect">✗ ${r}</span>`;return '';}
+function badge(r){const u=(r||'').toUpperCase();const disp=u==='WIN PLACED'?'PLACED':r;if(u==='CORRECT'||u==='PLACED'||u==='WIN PLACED')return`<span class="badge correct">✓ ${disp}</span>`;if(u==='INCORRECT'||u==='UNPLACED')return`<span class="badge incorrect">✗ ${disp}</span>`;return '';}
 
 function card(winner,sub,conf,result,time,odds,extra,rec,kelly,fixed,edge,valueRating,valueEdge,valueEv){
   const cc=confClass(conf),col=confColor(conf);
@@ -251,15 +251,14 @@ function renderRacing(){
     const ewRecCol = x.ewRec==='BET E/W'||x.ewRec==='E/W'?'var(--green)':x.ewRec==='SKIP'?'var(--muted)':'var(--amber)';
     const scoreCol = x.pickScore>=72?'var(--green)':x.pickScore>=62?'var(--amber)':'var(--muted)';
     const scoreBadge = x.pickScore>0?`<span style="font-size:8px;color:${scoreCol};border:1px solid ${scoreCol};border-radius:3px;padding:1px 5px;margin-left:6px">SCORE ${x.pickScore.toFixed(0)}</span>"`:'';
-    // Parse odds — from eachWay string or winOdds
+    // Parse odds from eachWay string
     const ewOddsRaw = x.odds || (x.eachWay?(x.eachWay.match(/at ([\d\/]+)/)||[])[1]||'':'') || '';
     const oddsDisplay = ewOddsRaw ? `<span style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--amber);background:rgba(255,180,0,0.1);border:1px solid rgba(255,180,0,0.3);border-radius:4px;padding:2px 7px;margin-left:6px">${ewOddsRaw}</span>` : '';
     const ewLabel = x.ewRec==='SKIP'
       ? `<span style="color:var(--muted);font-size:11px">⛔ SKIP — odds under 6/1${ewOddsRaw?' ('+ewOddsRaw+')':''}</span>`
       : `<span style="color:var(--green);font-size:11px;font-weight:600">✅ BET E/W${ewOddsRaw?' @ '+ewOddsRaw:''}</span>`;
-    const winNote = x.winPick&&x.winPick!==x.winner?`Win pick: ${x.winPick} (${x.winOdds})`:'';
-    const distBadge = x.distance?`<span style="color:var(--muted);font-size:10px;background:var(--card2);padding:2px 6px;border-radius:4px;margin-left:4px">${x.distance}</span>`:''; const goingBadge = x.going?`<span style="color:var(--muted);font-size:10px;background:var(--card2);padding:2px 6px;border-radius:4px;margin-left:4px">${x.going}</span>`:''; const extraInfo = [ewLabel, winNote, x.ewPlaceTerms?`Place terms: ${x.ewPlaceTerms}`:'', x.winVsEwEv, distBadge, goingBadge].filter(Boolean).join(' | ');
-    h+=flipWrap(card(x.winner,x.race,x.aiConf,x.result,x.time,x.odds,extraInfo,x.ewRec,x.kellyStake,'',x.valueEdge,x.ewRec==='SKIP'?'NO VALUE':x.valueRating,x.valueEdge,x.valueEv),{winner:x.winner,race:x.race,aiConf:x.aiConf,eachWay:x.eachWay||'',winPick:x.winPick||'',winOdds:x.winOdds||'',ewRec:x.ewRec||'',ewPlaceTerms:x.ewPlaceTerms||'',valueRating:x.valueRating||'',valueEdge:x.valueEdge||'',valueEv:x.valueEv||'',kellyStake:x.kellyStake||'',going:x.going||'',distance:x.distance||'',pickScore:x.pickScore||0,ew_trainer:x.ew_trainer||'',ew_jockey:x.ew_jockey||''});
+    const distBadge = x.distance?`<span style="color:var(--muted);font-size:10px;background:var(--card2);padding:2px 6px;border-radius:4px;margin-left:4px">${x.distance}</span>`:''; const goingBadge = x.going?`<span style="color:var(--muted);font-size:10px;background:var(--card2);padding:2px 6px;border-radius:4px;margin-left:4px">${x.going}</span>`:''; const extraInfo = [ewLabel, x.ewPlaceTerms?`Place terms: ${x.ewPlaceTerms}`:'', distBadge, goingBadge].filter(Boolean).join(' | ');
+    h+=flipWrap(card(x.winner,x.race,x.aiConf,x.result,x.time,x.odds,extraInfo,x.ewRec,x.kellyStake,'',x.valueEdge,x.ewRec==='SKIP'?'NO VALUE':x.valueRating,x.valueEdge,x.valueEv),{winner:x.winner,race:x.race,aiConf:x.aiConf,eachWay:x.eachWay||'',ewRec:x.ewRec||'',ewPlaceTerms:x.ewPlaceTerms||'',valueRating:x.valueRating||'',valueEdge:x.valueEdge||'',valueEv:x.valueEv||'',kellyStake:x.kellyStake||'',going:x.going||'',distance:x.distance||'',pickScore:x.pickScore||0,ew_trainer:x.ew_trainer||'',ew_jockey:x.ew_jockey||''});
   });
   return h;
 }
@@ -268,10 +267,11 @@ function renderHistory(){
   const d=allData.history.filter(x=>x.date>=_twoDaysAgo).slice().reverse();if(!d.length)return empty('📋','NO HISTORY YET','Make some predictions to build your history');
   let h='<div class="section-header">RECENT PREDICTIONS</div>';
   d.forEach(x=>{const s=x.sport==='RACING'?x.team:(x.opponent?`${x.opponent} @ ${x.team}`:x.team);const _r=x.result||'';
+    const _rDisp=_r==='WIN PLACED'?'PLACED':_r;
     const resultBadge=_r==='CORRECT'||_r==='PLACED'||_r==='WIN PLACED'
-      ?`<span style="color:var(--green);font-size:11px;font-weight:500">✓ ${_r}</span>`
+      ?`<span style="color:var(--green);font-size:11px;font-weight:500">✓ ${_rDisp}</span>`
       :_r==='INCORRECT'||_r==='UNPLACED'
-      ?`<span style="color:var(--red);font-size:11px;font-weight:500">✗ ${_r}</span>`
+      ?`<span style="color:var(--red);font-size:11px;font-weight:500">✗ ${_rDisp}</span>`
       :`<span style="color:var(--muted);font-size:11px">⏳ PENDING</span>`;const ewOdds=x.sport==='RACING'&&x.ewPick?x.ewPick.match(/at ([\d\/]+)/)?.[1]||'':'';
     const oddsTag=ewOdds?`<span class="odds"> ${ewOdds}</span>`:'';
     const ewLabel=x.sport==='RACING'&&x.ewPick&&x.ewPick.toLowerCase()!=='none'?`<span style="font-size:9px;color:var(--muted);letter-spacing:1px;margin-left:6px">E/W</span>`:'';
@@ -355,20 +355,21 @@ function renderStats(){
   // Prediction accuracy
   h+='<div class="section-header">PREDICTION ACCURACY</div>';
   Object.entries(s).forEach(([sport,st])=>{
+    const isRacing=(sport||'').toUpperCase()==='RACING';
     const tot=st.correct+st.incorrect,acc=tot>0?Math.round(st.correct/tot*100):0,col=acc>=50?'var(--green)':acc>=35?'var(--amber)':'var(--red)';
     const placed=st.placed||0,unplaced=st.unplaced||0,ewTot=placed+unplaced;
     const placeRate=ewTot>0?Math.round(placed/ewTot*100):0;
     const placeCol=placeRate>=35?'var(--green)':placeRate>=20?'var(--amber)':'var(--red)';
     h+=`<div class="accuracy-card"><div class="accuracy-title">${sport}</div>
-      <div class="accuracy-row"><span>Win Accuracy</span><span class="accuracy-pct" style="color:${col}">${acc}%</span></div>
+      ${isRacing?'':`<div class="accuracy-row"><span>Win Accuracy</span><span class="accuracy-pct" style="color:${col}">${acc}%</span></div>
       <div class="accuracy-row"><span>✓ Correct</span><span style="color:var(--green)">${st.correct}</span></div>
-      <div class="accuracy-row"><span>✗ Incorrect</span><span style="color:var(--red)">${st.incorrect}</span></div>
+      <div class="accuracy-row"><span>✗ Incorrect</span><span style="color:var(--red)">${st.incorrect}</span></div>`}
       ${ewTot>0?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
         <div class="accuracy-row"><span>E/W Place Rate</span><span style="color:${placeCol}">${placeRate}%</span></div>
         <div class="accuracy-row"><span>✓ Placed</span><span style="color:var(--green)">${placed}</span></div>
         <div class="accuracy-row"><span>✗ Unplaced</span><span style="color:var(--red)">${unplaced}</span></div>
       </div>`:''}
-      <div style="margin-top:10px"><div class="conf-bar" style="height:6px"><div class="conf-fill" style="width:${acc}%;background:${col}"></div></div></div></div>`;
+      <div style="margin-top:10px"><div class="conf-bar" style="height:6px"><div class="conf-fill" style="width:${isRacing?placeRate:acc}%;background:${isRacing?placeCol:col}"></div></div></div></div>`;
   });
   let tc=0,ti=0;Object.values(s).forEach(x=>{tc+=x.correct;ti+=x.incorrect;});
   const tot=tc+ti,oa=tot>0?Math.round(tc/tot*100):0,oc=oa>=50?'var(--green)':oa>=35?'var(--amber)':'var(--red)';
@@ -606,7 +607,7 @@ function buildFlipBack(x){
   if(x.race||x.ewRec){
     // Racing
     const ewHorse = (x.eachWay||'').split(' at ')[0].trim()||x.winner||'';
-    const ewOdds  = (x.eachWay||'').match(/at ([\d\/]+)/)?.[1]||x.winOdds||'';
+    const ewOdds  = (x.eachWay||'').match(/at ([\d\/]+)/)?.[1]||'';
     const vrCol   = vCol(x.valueRating||'');
     h += `<div class="flip-back-title">${ewHorse}</div>`;
     h += `<div class="flip-back-sub">${x.race||''} · ${x.distance||''} · ${x.going||''}</div>`;
@@ -616,8 +617,6 @@ function buildFlipBack(x){
       <div class="flip-back-stat"><div class="flip-back-stat-val" style="color:var(--amber)">${ewOdds||'—'}</div><div class="flip-back-stat-label">E/W ODDS</div></div>
       <div class="flip-back-stat"><div class="flip-back-stat-val" style="color:${vrCol}">${x.valueEdge?x.valueEdge+'%':'—'}</div><div class="flip-back-stat-label">EDGE</div></div>
     </div>`;
-    h += row('Win Pick', x.winPick||'', 'var(--text)');
-    h += row('Win Odds', x.winOdds||'', 'var(--amber)');
     h += row('Place Terms', x.ewPlaceTerms||'', 'var(--text)');
     h += row('Runners', x.numRunners||'', 'var(--text)');
     h += row('EV per £1', x.valueEv||'', vrCol);
