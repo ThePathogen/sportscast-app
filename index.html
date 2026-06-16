@@ -565,6 +565,82 @@ function parseAnalyticsSheet(rows){
   return data;
 }
 
+// ── Cover Bet Builder ───────────────────────────────────────────────────────
+const COVER_BETS = {
+  3: {name:'Patent',      bets:7,   desc:'3 singles, 3 doubles, 1 treble'},
+  4: {name:'Lucky 15',    bets:15,  desc:'4 singles, 6 doubles, 4 trebles, 1 four-fold'},
+  5: {name:'Lucky 31',    bets:31,  desc:'5 singles, 10 doubles, 10 trebles, 5 four-folds, 1 five-fold'},
+  6: {name:'Lucky 63',    bets:63,  desc:'6 singles, 15 doubles, 20 trebles, 15 four-folds, 6 five-folds, 1 six-fold'},
+  7: {name:'Super Heinz', bets:120, desc:'full cover on 7 selections'},
+  8: {name:'Goliath',     bets:247, desc:'full cover on 8 selections'},
+};
+
+function buildCoverBetText(picks, label){
+  const n = picks.length;
+  const cb = COVER_BETS[Math.min(n,8)];
+  let text = `${cb.name.toUpperCase()} (${cb.bets} bets) — ${label}\n`;
+  picks.forEach((p,i)=>{ text += `${i+1}. ${p.name}${p.sub?' ('+p.sub+')':''} — ${p.conf}%\n`; });
+  return {cb, text};
+}
+
+function copyToClipboard(text, btnEl){
+  const done = ()=>{
+    const orig = btnEl.textContent;
+    btnEl.textContent = '✓ COPIED';
+    setTimeout(()=>{ btnEl.textContent = orig; }, 1500);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(()=>{
+      _fallbackCopy(text); done();
+    });
+  } else {
+    _fallbackCopy(text); done();
+  }
+}
+
+function _fallbackCopy(text){
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.left = '-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  try{ document.execCommand('copy'); }catch(e){}
+  document.body.removeChild(ta);
+}
+
+function renderCoverBetSection(mlbPicks, racingPicks){
+  const MIN_PICKS = 3;
+  let h = '';
+
+  const buildBlock = (picks, label, icon)=>{
+    if(picks.length < MIN_PICKS) return '';
+    const {cb, text} = buildCoverBetText(picks, label);
+    const listId = 'coverbet_'+label.replace(/\s+/g,'_')+'_'+picks.length;
+    const _safeText = text.replace(/'/g,"\\'").replace(/\n/g,'\\n');
+    return `<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:17px">${icon} ${cb.name.toUpperCase()}</div>
+        <div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace">${cb.bets} BETS</div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:10px">${picks.length} picks at 70%+ · ${label}</div>
+      ${picks.map((p,i)=>`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(30,42,30,0.4);font-size:12px"><span>${i+1}. ${p.name}${p.sub?' <span style=\"color:var(--muted);font-size:10px\">('+p.sub+')</span>':''}</span><span style="color:var(--amber)">${p.conf}%</span></div>`).join('')}
+      <button onclick="copyToClipboard('${_safeText}',this)" style="width:100%;margin-top:10px;background:var(--green);color:#000;border:none;border-radius:8px;padding:10px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px;cursor:pointer">📋 COPY BET LIST</button>
+    </div>`;
+  };
+
+  const blocks = [
+    buildBlock(mlbPicks, 'MLB', '⚾'),
+    buildBlock(racingPicks, 'RACING', '🐎'),
+  ].filter(Boolean);
+
+  if(!blocks.length) return '';
+
+  h += '<div class="section-header" style="margin-top:16px">COVER BET BUILDER</div>';
+  h += blocks.join('');
+  return h;
+}
+
 // ── Card Flip ────────────────────────────────────────────────────────────────
 function flipWrap(cardHtml, dataObj){
   const d = btoa(unescape(encodeURIComponent(JSON.stringify(dataObj))));
@@ -674,6 +750,14 @@ function renderAccas(){
       <div style="font-size:22px;font-family:'Bebas Neue',sans-serif;color:${col};margin-left:8px">${conf}%</div>
     </div>`;
   });
+
+  // Cover bet builder — 70%+ picks only, separate MLB/Racing lists
+  const mlb70 = allData.mlb.filter(x=>(x.blended||x.aiConf||0)>=70).sort((a,b)=>(b.blended||b.aiConf)-(a.blended||a.aiConf))
+    .map(x=>({name:x.winner||'',sub:x.opponent?`vs ${x.opponent}`:'',conf:x.blended||x.aiConf||0}));
+  const racing70 = allData.racing.filter(x=>{const c=(x.pickScore>0?x.pickScore:(x.blended||x.aiConf||0));return c>=70&&x.ewRec!=='SKIP';})
+    .sort((a,b)=>(b.pickScore>0?b.pickScore:(b.blended||b.aiConf))-(a.pickScore>0?a.pickScore:(a.blended||a.aiConf)))
+    .map(x=>({name:x.winner||'',sub:x.race||'',conf:Math.round(x.pickScore>0?x.pickScore:(x.blended||x.aiConf||0))}));
+  h += renderCoverBetSection(mlb70, racing70);
 
   h += '<div class="section-header" style="margin-top:16px">SUGGESTED ACCUMULATORS</div>';
   const typeEmoji = {MLB:'⚾',RACING:'🐎',MIXED:'🎯'};
