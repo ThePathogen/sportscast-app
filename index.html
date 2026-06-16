@@ -578,8 +578,8 @@ const COVER_BETS = {
 function buildCoverBetText(picks, label){
   const n = picks.length;
   const cb = COVER_BETS[Math.min(n,8)];
-  let text = `${cb.name.toUpperCase()} (${cb.bets} bets) — ${label}\n`;
-  picks.forEach((p,i)=>{ text += `${i+1}. ${p.name}${p.sub?' ('+p.sub+')':''} — ${p.conf}%\n`; });
+  // Plain selection names only — no confidence, ready to paste straight into a bet builder
+  let text = picks.map(p=>p.name).join('\n');
   return {cb, text};
 }
 
@@ -652,24 +652,32 @@ function flipCard(el){
   const x = JSON.parse(decodeURIComponent(escape(atob(el.dataset.x||'e30='))));
   // Close any currently flipped card
   if(_flippedCard && _flippedCard !== el){
-    _flippedCard.querySelector('.flip-inner').classList.remove('flipped');
+    const _prevInner = _flippedCard.querySelector('.flip-inner');
+    const _prevFront  = _flippedCard.querySelector('.flip-front');
+    _prevInner.classList.remove('flipped');
+    setTimeout(()=>{ _prevInner.style.height = _prevFront.offsetHeight+'px'; }, 450);
     _flippedCard = null;
   }
   const inner = el.querySelector('.flip-inner');
+  const front = el.querySelector('.flip-front');
+  const back  = el.querySelector('.flip-back');
   const isFlipped = inner.classList.contains('flipped');
+
   if(isFlipped){
     inner.classList.remove('flipped');
+    // Reset height back to the front face after the flip animation finishes
+    setTimeout(()=>{ inner.style.height = front.offsetHeight+'px'; }, 450);
     _flippedCard = null;
     return;
   }
+
   // Build back content if not already built
-  const back = el.querySelector('.flip-back');
   if(!back.dataset.built){
     back.innerHTML = buildFlipBack(x) + '<div class="flip-back-hint">TAP TO FLIP BACK</div>';
     back.dataset.built = '1';
-    // Match height after build
-    setTimeout(()=>{ inner.style.height = Math.max(el.querySelector('.flip-front').offsetHeight, back.offsetHeight)+'px'; }, 10);
   }
+  // Match height to whichever face is taller while flipped open
+  inner.style.height = Math.max(front.offsetHeight, back.offsetHeight)+'px';
   inner.classList.add('flipped');
   _flippedCard = el;
 }
