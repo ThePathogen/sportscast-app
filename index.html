@@ -57,6 +57,13 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .flip-back-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;margin-bottom:4px}
 .flip-back-sub{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
 .flip-back-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+.compare-wrap{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.compare-col{background:rgba(255,255,255,0.03);border-radius:8px;padding:8px}
+.compare-col.ew{border:1px solid rgba(50,200,100,0.25)}
+.compare-col.win{border:1px solid rgba(255,180,0,0.25)}
+.compare-head{font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:1px;margin-bottom:6px;text-align:center}
+.compare-row{display:flex;justify-content:space-between;font-size:10px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+.compare-row span:first-child{color:var(--muted)}
 .flip-back-stat{background:rgba(255,255,255,0.03);border-radius:6px;padding:6px;text-align:center}
 .flip-back-stat-val{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:0.5px}
 .flip-back-stat-label{font-family:'DM Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:1px}
@@ -187,7 +194,7 @@ async function loadData(){
   try{
     const[mlbRows,racingRows,historyRows,betsRows,accaRows]=await Promise.all([
       fetchSheet('Daily Summary','A4:S200'),
-      fetchSheet('Racing','A3:T200'),
+      fetchSheet('Racing','A3:Y200'),
       fetchSheet('History','A5:K2000'),
       fetchSheet('Bets','A2:I500').catch(()=>[]),
       fetchSheet('Accas','A2:H100').catch(()=>[]),
@@ -195,7 +202,7 @@ async function loadData(){
     allData.bets=betsRows;
     allData.accas=(accaRows||[]).map(r=>({date:r[0]||'',type:r[1]||'',legs:r[2]||'',odds:r[3]||'',returns:r[4]||'',conf:r[5]||'',combinedProb:r[6]||'',selections:(r[7]||'')}));
     allData.mlb=mlbRows.map(r=>({date:r[0]||'',sport:r[1]||'MLB',team:r[2]||'',opponent:r[3]||'',winner:r[4]||'',score:r[5]||'',aiConf:parseInt(r[6])||0,blended:parseInt(r[7])||0,actual:r[8]||'',result:r[9]||'PENDING',time:r[11]||'TBD',recommendation:r[12]||'',kellyStake:r[13]||'',fixedStake:r[14]||'',edge:r[15]||'',valueRating:r[16]||'',valueEdge:r[17]||'',valueEv:r[18]||''}));
-    const _rawRacing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winPick:r[2]||'',winOdds:r[3]||'',eachWay:r[4]||'',ewPlaceTerms:r[5]||'',aiConf:parseInt(r[6])||0,going:r[7]||'',ewResult:r[8]||'',ewRec:r[9]||'',winVsEwEv:r[10]||'',placeProb:r[11]||'',distance:r[12]||'',actual:r[13]||'',result:r[14]||'PENDING',time:r[15]||'',valueRating:r[16]||'',valueEdge:r[17]||'',valueEv:r[18]||'',kellyStake:r[19]||'',pickScore:parseFloat(r[20])||0,get winner(){return this.eachWay?this.eachWay.split(' at ')[0].split(' -')[0].split(',')[0].trim():this.winPick;},get odds(){return this.eachWay?this.eachWay.match(/at ([\d\/]+)/)?.[1]||this.winOdds:this.winOdds;}}));
+    const _rawRacing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winPick:r[2]||'',winOdds:r[3]||'',eachWay:r[4]||'',ewPlaceTerms:r[5]||'',aiConf:parseInt(r[6])||0,going:r[7]||'',ewResult:r[8]||'',ewRec:r[9]||'',winVsEwEv:r[10]||'',placeProb:r[11]||'',distance:r[12]||'',actual:r[13]||'',result:r[14]||'PENDING',time:r[15]||'',valueRating:r[16]||'',valueEdge:r[17]||'',valueEv:r[18]||'',kellyStake:r[19]||'',pickScore:parseFloat(r[20])||0,winProbability:r[21]||'',winOddsCol:r[22]||'',winEv:r[23]||'',winEdge:r[24]||'',get winner(){return this.eachWay?this.eachWay.split(' at ')[0].split(' -')[0].split(',')[0].trim():this.winPick;},get odds(){return this.eachWay?this.eachWay.match(/at ([\d\/]+)/)?.[1]||this.winOdds:this.winOdds;}}));
   const _seenRacing=new Set();
   allData.racing=_rawRacing.filter(x=>{if(!x.winner||!x.race)return false;const k=x.race+'|'+x.winner;if(_seenRacing.has(k))return false;_seenRacing.add(k);return true;});
   //allData.racing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winner:r[2]||'',odds:r[3]||'',eachWay:r[4]||'',ewPlaceTerms:r[5]||'',aiConf:parseInt(r[6])||0,going:r[7]||'',ewResult:r[8]||'',ewRec:r[9]||'',winVsEwEv:r[10]||'',placeProb:r[11]||'',distance:r[12]||'',actual:r[13]||'',result:r[14]||'PENDING',time:r[15]||''}));
@@ -257,8 +264,9 @@ function renderRacing(){
     const ewLabel = x.ewRec==='SKIP'
       ? `<span style="color:var(--muted);font-size:11px">⛔ SKIP — odds under 6/1${ewOddsRaw?' ('+ewOddsRaw+')':''}</span>`
       : `<span style="color:var(--green);font-size:11px;font-weight:600">✅ BET E/W${ewOddsRaw?' @ '+ewOddsRaw:''}</span>`;
-    const distBadge = x.distance?`<span style="color:var(--muted);font-size:10px;background:var(--card2);padding:2px 6px;border-radius:4px;margin-left:4px">${x.distance}</span>`:''; const goingBadge = x.going?`<span style="color:var(--muted);font-size:10px;background:var(--card2);padding:2px 6px;border-radius:4px;margin-left:4px">${x.going}</span>`:''; const extraInfo = [ewLabel, x.ewPlaceTerms?`Place terms: ${x.ewPlaceTerms}`:'', distBadge, goingBadge].filter(Boolean).join(' | ');
-    h+=flipWrap(card(x.winner,x.race,x.aiConf,x.result,x.time,x.odds,extraInfo,x.ewRec,x.kellyStake,'',x.valueEdge,x.ewRec==='SKIP'?'NO VALUE':x.valueRating,x.valueEdge,x.valueEv),{winner:x.winner,race:x.race,aiConf:x.aiConf,eachWay:x.eachWay||'',ewRec:x.ewRec||'',ewPlaceTerms:x.ewPlaceTerms||'',valueRating:x.valueRating||'',valueEdge:x.valueEdge||'',valueEv:x.valueEv||'',kellyStake:x.kellyStake||'',going:x.going||'',distance:x.distance||'',pickScore:x.pickScore||0,ew_trainer:x.ew_trainer||'',ew_jockey:x.ew_jockey||''});
+    const winNote = x.winPick&&x.winPick!==x.winner?`<span style="color:var(--muted);font-size:10px">Win pick: ${x.winPick}${x.winOdds?' ('+x.winOdds+')':''}</span>`:'';
+    const distBadge = x.distance?`<span style="color:var(--muted);font-size:10px;background:var(--card2);padding:2px 6px;border-radius:4px;margin-left:4px">${x.distance}</span>`:''; const goingBadge = x.going?`<span style="color:var(--muted);font-size:10px;background:var(--card2);padding:2px 6px;border-radius:4px;margin-left:4px">${x.going}</span>`:''; const extraInfo = [ewLabel, winNote, x.ewPlaceTerms?`Place terms: ${x.ewPlaceTerms}`:'', distBadge, goingBadge].filter(Boolean).join(' | ');
+    h+=flipWrap(card(x.winner,x.race,x.aiConf,x.result,x.time,x.odds,extraInfo,x.ewRec,x.kellyStake,'',x.valueEdge,x.ewRec==='SKIP'?'NO VALUE':x.valueRating,x.valueEdge,x.valueEv),{winner:x.winner,race:x.race,aiConf:x.aiConf,eachWay:x.eachWay||'',winPick:x.winPick||'',winOdds:x.winOdds||'',ewRec:x.ewRec||'',ewPlaceTerms:x.ewPlaceTerms||'',valueRating:x.valueRating||'',valueEdge:x.valueEdge||'',valueEv:x.valueEv||'',kellyStake:x.kellyStake||'',going:x.going||'',distance:x.distance||'',pickScore:x.pickScore||0,ew_trainer:x.ew_trainer||'',ew_jockey:x.ew_jockey||'',winProbability:x.winProbability||'',winEv:x.winEv||'',winEdge:x.winEdge||''});
   });
   return h;
 }
@@ -693,18 +701,37 @@ function buildFlipBack(x){
     const ewHorse = (x.eachWay||'').split(' at ')[0].trim()||x.winner||'';
     const ewOdds  = (x.eachWay||'').match(/at ([\d\/]+)/)?.[1]||'';
     const vrCol   = vCol(x.valueRating||'');
+    const winEvNum = parseFloat((x.winEv||'').replace('£',''))||0;
+    const ewEvNum  = parseFloat((x.valueEv||'').replace('£',''))||0;
+    const winEvCol = winEvNum>0?'var(--green)':'var(--red)';
+    const ewEvCol  = ewEvNum>0?'var(--green)':'var(--red)';
     h += `<div class="flip-back-title">${ewHorse}</div>`;
     h += `<div class="flip-back-sub">${x.race||''} · ${x.distance||''} · ${x.going||''}</div>`;
+
+    // Side-by-side: Win pick vs E/W pick comparison
+    h += `<div class="compare-wrap">
+      <div class="compare-col win">
+        <div class="compare-head" style="color:var(--amber)">WIN: ${x.winPick||'—'}</div>
+        <div class="compare-row"><span>Probability</span><span>${x.winProbability||'—'}</span></div>
+        <div class="compare-row"><span>Odds</span><span>${x.winOdds||'—'}</span></div>
+        <div class="compare-row"><span>EV per £1</span><span style="color:${winEvCol}">${x.winEv||'—'}</span></div>
+        <div class="compare-row"><span>Edge</span><span style="color:${winEvCol}">${x.winEdge||'—'}</span></div>
+      </div>
+      <div class="compare-col ew">
+        <div class="compare-head" style="color:var(--green)">E/W: ${ewHorse}</div>
+        <div class="compare-row"><span>Confidence</span><span>${x.aiConf}%</span></div>
+        <div class="compare-row"><span>Odds</span><span>${ewOdds||'—'}</span></div>
+        <div class="compare-row"><span>EV per £1</span><span style="color:${ewEvCol}">${x.valueEv||'—'}</span></div>
+        <div class="compare-row"><span>Edge</span><span style="color:${ewEvCol}">${x.valueEdge?x.valueEdge+'%':'—'}</span></div>
+      </div>
+    </div>`;
+
     h += `<div class="flip-back-grid">
-      <div class="flip-back-stat"><div class="flip-back-stat-val" style="color:${col(x.aiConf)}">${x.aiConf}%</div><div class="flip-back-stat-label">CONFIDENCE</div></div>
-      <div class="flip-back-stat"><div class="flip-back-stat-val" style="color:${vrCol}">${x.valueRating||'—'}</div><div class="flip-back-stat-label">VALUE</div></div>
-      <div class="flip-back-stat"><div class="flip-back-stat-val" style="color:var(--amber)">${ewOdds||'—'}</div><div class="flip-back-stat-label">E/W ODDS</div></div>
-      <div class="flip-back-stat"><div class="flip-back-stat-val" style="color:${vrCol}">${x.valueEdge?x.valueEdge+'%':'—'}</div><div class="flip-back-stat-label">EDGE</div></div>
+      <div class="flip-back-stat"><div class="flip-back-stat-val" style="color:${vrCol}">${x.valueRating||'—'}</div><div class="flip-back-stat-label">VALUE RATING</div></div>
+      <div class="flip-back-stat"><div class="flip-back-stat-val" style="color:var(--green)">${x.kellyStake||'—'}</div><div class="flip-back-stat-label">KELLY STAKE</div></div>
     </div>`;
     h += row('Place Terms', x.ewPlaceTerms||'', 'var(--text)');
     h += row('Runners', x.numRunners||'', 'var(--text)');
-    h += row('EV per £1', x.valueEv||'', vrCol);
-    h += row('Kelly Stake', x.kellyStake||'', 'var(--green)');
     if(x.pickScore>0) h += row('Pick Score', x.pickScore.toFixed(0)+'/100', x.pickScore>=72?'var(--green)':x.pickScore>=62?'var(--amber)':'var(--muted)');
     if(x.ew_trainer) h += row('Trainer', x.ew_trainer, 'var(--text)');
     if(x.ew_jockey)  h += row('Jockey', x.ew_jockey, 'var(--text)');
