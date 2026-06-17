@@ -71,6 +71,19 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .flip-back-key{color:var(--muted);font-family:'DM Mono',monospace}
 .flip-back-val{font-family:'DM Mono',monospace;font-weight:500}
 .flip-back-hint{font-family:'DM Mono',monospace;font-size:8px;color:var(--muted);text-align:center;margin-top:8px;letter-spacing:1px}
+.odds-btn{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;background:var(--card2);border:1px solid var(--border);color:var(--muted);font-size:11px;margin-left:5px;cursor:pointer;vertical-align:middle}
+.odds-modal-overlay{display:none;position:fixed;inset:0;z-index:400;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:24px}
+.odds-modal-overlay.open{display:flex}
+.odds-modal{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;width:100%;max-width:320px}
+.odds-modal-title{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;margin-bottom:14px;text-align:center}
+.odds-input-row{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px}
+.odds-input{width:64px;text-align:center;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 6px;color:var(--text);font-family:'Bebas Neue',sans-serif;font-size:20px}
+.odds-slash{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--muted)}
+.odds-result{text-align:center;padding:14px;background:rgba(50,200,100,0.08);border:1px solid rgba(50,200,100,0.25);border-radius:10px;margin-bottom:14px}
+.odds-result-val{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--green);letter-spacing:1px}
+.odds-result-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;margin-top:2px}
+.odds-implied{text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:14px}
+.odds-close-btn{width:100%;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px;cursor:pointer}
 .analytics-sheet{position:fixed;bottom:0;left:0;right:0;z-index:150;background:var(--surface);border-radius:16px 16px 0 0;border-top:1px solid var(--border);transform:translateY(calc(100% - 36px));transition:transform 0.35s cubic-bezier(0.4,0,0.2,1)}
 .analytics-sheet.open{transform:translateY(0)}
 .analytics-pill{display:flex;align-items:center;justify-content:center;height:36px;cursor:pointer;touch-action:none}
@@ -231,7 +244,9 @@ function badge(r){const u=(r||'').toUpperCase();const disp=u==='WIN PLACED'?'PLA
 
 function card(winner,sub,conf,result,time,odds,extra,rec,kelly,fixed,edge,valueRating,valueEdge,valueEv){
   const cc=confClass(conf),col=confColor(conf);
-  const oddsStr=odds?`<span class="odds"> ${odds}</span>`:'';
+  const _oddsParts=(odds||'').match(/^(\d+)\/(\d+)$/);
+  const oddsCalcBtn=odds?`<span class="odds-btn" onclick="event.stopPropagation();openOddsConverter(${_oddsParts?_oddsParts[1]:''},${_oddsParts?_oddsParts[2]:''})">🧮</span>`:'';
+  const oddsStr=odds?`<span class="odds"> ${odds}</span>${oddsCalcBtn}`:'';
   const extraStr=extra?`<div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-family:'DM Mono',monospace">${extra}</div>`:'';
   const recCol=rec==='BET'||rec==='TRADE'?'var(--green)':rec==='SKIP'?'var(--red)':'var(--amber)';
   const stakeStr=(rec||kelly)?`<div style="display:flex;gap:10px;margin-top:8px;padding:8px;background:rgba(255,255,255,0.03);border-radius:6px;font-size:10px">${rec?`<span style="color:${recCol};letter-spacing:1px;font-weight:500">${rec}</span>`:''} ${kelly?`<span style="color:var(--muted)">Kelly: <span style="color:var(--green)">${kelly}</span></span>`:''} ${fixed?`<span style="color:var(--muted)">Fixed: <span style="color:var(--text)">${fixed}</span></span>`:''} ${edge?`<span style="color:var(--muted)">Edge: <span style="color:var(--amber)">${edge}</span></span>`:''}</div>`:'';
@@ -573,6 +588,39 @@ function parseAnalyticsSheet(rows){
   return data;
 }
 
+// ── Odds Converter ──────────────────────────────────────────────────────────
+function openOddsConverter(num, den){
+  const overlay = document.getElementById('odds-modal-overlay');
+  const numInput = document.getElementById('odds-num');
+  const denInput = document.getElementById('odds-den');
+  numInput.value = num || '';
+  denInput.value = den || '';
+  overlay.classList.add('open');
+  updateOddsResult();
+  setTimeout(()=>numInput.focus(), 100);
+}
+
+function closeOddsConverter(e){
+  if(e && e.target !== document.getElementById('odds-modal-overlay')) return;
+  document.getElementById('odds-modal-overlay').classList.remove('open');
+}
+
+function updateOddsResult(){
+  const num = parseFloat(document.getElementById('odds-num').value);
+  const den = parseFloat(document.getElementById('odds-den').value);
+  const resultEl = document.getElementById('odds-result-val');
+  const impliedEl = document.getElementById('odds-implied');
+  if(!num || !den || den===0){
+    resultEl.textContent = '—';
+    impliedEl.textContent = '';
+    return;
+  }
+  const decimal = (num/den) + 1;
+  const implied = (1/decimal)*100;
+  resultEl.textContent = decimal.toFixed(3);
+  impliedEl.textContent = `Implied win chance: ${implied.toFixed(1)}%`;
+}
+
 // ── Cover Bet Builder ───────────────────────────────────────────────────────
 const COVER_BETS = {
   3: {name:'Patent',      bets:7,   desc:'3 singles, 3 doubles, 1 treble'},
@@ -840,5 +888,21 @@ function switchTab(tab,el,nav){
 }
 if(SHEET_ID&&API_KEY)loadData();else renderSetupPrompt(); loadAnalytics(); initSheetSwipe();
 </script>
+<div class="odds-modal-overlay" id="odds-modal-overlay" onclick="closeOddsConverter(event)">
+  <div class="odds-modal" onclick="event.stopPropagation()">
+    <div class="odds-modal-title">ODDS CONVERTER</div>
+    <div class="odds-input-row">
+      <input type="number" id="odds-num" class="odds-input" placeholder="5" oninput="updateOddsResult()">
+      <span class="odds-slash">/</span>
+      <input type="number" id="odds-den" class="odds-input" placeholder="8" oninput="updateOddsResult()">
+    </div>
+    <div class="odds-result">
+      <div class="odds-result-val" id="odds-result-val">—</div>
+      <div class="odds-result-label">DECIMAL ODDS</div>
+    </div>
+    <div class="odds-implied" id="odds-implied"></div>
+    <button class="odds-close-btn" onclick="closeOddsConverter()">CLOSE</button>
+  </div>
+</div>
 </body>
 </html>
