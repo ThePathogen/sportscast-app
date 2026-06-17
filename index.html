@@ -384,9 +384,9 @@ function renderStats(){
     const placeRate=ewTot>0?Math.round(placed/ewTot*100):0;
     const placeCol=placeRate>=35?'var(--green)':placeRate>=20?'var(--amber)':'var(--red)';
     h+=`<div class="accuracy-card"><div class="accuracy-title">${sport}</div>
-      ${isRacing?'':`<div class="accuracy-row"><span>Win Accuracy</span><span class="accuracy-pct" style="color:${col}">${acc}%</span></div>
+      <div class="accuracy-row"><span>${isRacing?'Win Pick Accuracy':'Win Accuracy'}</span><span class="accuracy-pct" style="color:${col}">${acc}%</span></div>
       <div class="accuracy-row"><span>✓ Correct</span><span style="color:var(--green)">${st.correct}</span></div>
-      <div class="accuracy-row"><span>✗ Incorrect</span><span style="color:var(--red)">${st.incorrect}</span></div>`}
+      <div class="accuracy-row"><span>✗ Incorrect</span><span style="color:var(--red)">${st.incorrect}</span></div>
       ${ewTot>0?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
         <div class="accuracy-row"><span>E/W Place Rate</span><span style="color:${placeCol}">${placeRate}%</span></div>
         <div class="accuracy-row"><span>✓ Placed</span><span style="color:var(--green)">${placed}</span></div>
