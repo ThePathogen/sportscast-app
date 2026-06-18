@@ -205,14 +205,16 @@ async function loadData(){
   if(!SHEET_ID||!API_KEY){renderSetupPrompt();return;}
   
   try{
-    const[mlbRows,racingRows,historyRows,betsRows,accaRows]=await Promise.all([
+    const[mlbRows,racingRows,historyRows,betsRows,accaRows,autoBetRows]=await Promise.all([
       fetchSheet('Daily Summary','A4:S200'),
       fetchSheet('Racing','A3:Y200'),
       fetchSheet('History','A5:K2000'),
       fetchSheet('Bets','A2:I500').catch(()=>[]),
       fetchSheet('Accas','A2:H100').catch(()=>[]),
+      fetchSheet('AutoBet','A2:K1000').catch(()=>[]),
     ]);
     allData.bets=betsRows;
+    allData.autoBets=(autoBetRows||[]).map(r=>({timestamp:r[0]||'',race:r[1]||'',ewHorse:r[2]||'',odds:r[3]||'',stakeEw:r[4]||'',totalOutlay:r[5]||'',valueRating:r[6]||'',edge:r[7]||'',confidence:r[8]||'',status:r[9]||'PENDING',wonOutright:r[10]||''}));
     allData.accas=(accaRows||[]).map(r=>({date:r[0]||'',type:r[1]||'',legs:r[2]||'',odds:r[3]||'',returns:r[4]||'',conf:r[5]||'',combinedProb:r[6]||'',selections:(r[7]||'')}));
     allData.mlb=mlbRows.map(r=>({date:r[0]||'',sport:r[1]||'MLB',team:r[2]||'',opponent:r[3]||'',winner:r[4]||'',score:r[5]||'',aiConf:parseInt(r[6])||0,blended:parseInt(r[7])||0,actual:r[8]||'',result:r[9]||'PENDING',time:r[11]||'TBD',recommendation:r[12]||'',kellyStake:r[13]||'',fixedStake:r[14]||'',edge:r[15]||'',valueRating:r[16]||'',valueEdge:r[17]||'',valueEv:r[18]||''}));
     const _rawRacing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winPick:r[2]||'',winOdds:r[3]||'',eachWay:r[4]||'',ewPlaceTerms:r[5]||'',aiConf:parseInt(r[6])||0,going:r[7]||'',ewResult:r[8]||'',ewRec:r[9]||'',winVsEwEv:r[10]||'',placeProb:r[11]||'',distance:r[12]||'',actual:r[13]||'',result:r[14]||'PENDING',time:r[15]||'',valueRating:r[16]||'',valueEdge:r[17]||'',valueEv:r[18]||'',kellyStake:r[19]||'',pickScore:parseFloat(r[20])||0,winProbability:r[21]||'',winOddsCol:r[22]||'',winEv:r[23]||'',winEdge:r[24]||'',get winner(){return this.eachWay?this.eachWay.split(' at ')[0].split(' -')[0].split(',')[0].trim():this.winPick;},get odds(){return this.eachWay?this.eachWay.match(/at ([\d\/]+)/)?.[1]||this.winOdds:this.winOdds;}}));
@@ -401,6 +403,60 @@ function renderStats(){
     <div class="stat"><div class="stat-val" style="color:${plCol}">${bpl.total>=0?'+':''}£${bpl.total.toFixed(0)}</div><div class="stat-label">BET P&L</div></div>
     <div class="stat"><div class="stat-val" style="color:${plCol}">${roi>=0?'+':''}${roi.toFixed(0)}%</div><div class="stat-label">ROI</div></div>
   </div>`;
+
+  // Auto-Bet Dry Run — simulated running bankroll, not real money.
+  // Mirrors auto_bet.py's simulate_bankroll(): replays every SETTLED bet in
+  // chronological order against a standalone bankroll starting at £5, paying
+  // both win+place legs when wonOutright is confirmed TRUE, otherwise
+  // falling back to place-side-only (conservative, for older entries settled
+  // before that flag existed).
+  const ab = allData.autoBets||[];
+  if(ab.length){
+    const STARTING_BANKROLL = 5.00;
+    const parseMoney = v => parseFloat((v||'').replace('£',''))||0;
+    const oddsToDec = s => { const m=(s||'').match(/(\d+)\/(\d+)/); return m?1+(parseInt(m[1])/parseInt(m[2])):0; };
+
+    const abPending = ab.filter(b=>b.status==='PENDING');
+    const sorted = [...ab].sort((a,b)=>(a.timestamp||'').localeCompare(b.timestamp||''));
+
+    let bankroll = STARTING_BANKROLL;
+    let settledCount = 0, placedCount = 0, unplacedCount = 0;
+    sorted.forEach(b=>{
+      if(b.status!=='PLACED'&&b.status!=='UNPLACED') return;
+      settledCount++;
+      const outlay = parseMoney(b.totalOutlay);
+      const stakeEw = parseMoney(b.stakeEw);
+      const dec = oddsToDec(b.odds);
+      let change = -outlay;
+      if(b.status==='PLACED'){
+        placedCount++;
+        const placeDec = dec>1 ? (dec-1)/5+1 : 0;
+        if(b.wonOutright==='TRUE'){
+          change += stakeEw*dec + stakeEw*placeDec; // both legs pay
+        } else {
+          change += stakeEw*placeDec; // place leg only (or unknown — conservative)
+        }
+      } else {
+        unplacedCount++;
+      }
+      bankroll += change;
+    });
+
+    const pnl = bankroll - STARTING_BANKROLL;
+    const pnlCol = pnl>=0?'var(--green)':'var(--red)';
+
+    h+=`<div class="section-header" style="margin-top:16px">AUTO-BET DRY RUN <span style="color:var(--muted);font-size:9px">(SIMULATED — NOT REAL MONEY)</span></div>
+    <div class="stat-bar">
+      <div class="stat"><div class="stat-val">£${STARTING_BANKROLL.toFixed(2)}</div><div class="stat-label">STARTING</div></div>
+      <div class="stat"><div class="stat-val" style="color:${pnlCol}">£${bankroll.toFixed(2)}</div><div class="stat-label">SIM BANKROLL NOW</div></div>
+      <div class="stat"><div class="stat-val" style="color:${pnlCol}">${pnl>=0?'+':''}£${pnl.toFixed(2)}</div><div class="stat-label">TOTAL P&L</div></div>
+    </div>
+    <div style="font-size:10px;color:var(--muted);text-align:center;margin-top:-6px;margin-bottom:10px">
+      ${ab.length} logged · ${abPending.length} pending · ${settledCount} settled (${placedCount} placed, ${unplacedCount} unplaced)<br>
+      "What you'd have if you'd followed every auto-bet from £${STARTING_BANKROLL.toFixed(2)}"
+    </div>`;
+  }
+
   return h;
 }
 function renderSetupPrompt(){document.getElementById('content').innerHTML=`<div style="padding:24px 0"><div class="empty"><div class="empty-icon">⚙️</div><div class="empty-title">SETUP REQUIRED</div><div class="empty-sub" style="margin-bottom:20px">Connect your Google Sheet to see predictions on your phone</div></div><div class="setup-hint" onclick="openConfig()">Tap here to enter your Google Sheets ID and API Key →</div></div>`;}
