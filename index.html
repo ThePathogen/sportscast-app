@@ -770,7 +770,7 @@ function buildFlipBack(x){
         <div class="compare-row"><span>Confidence</span><span>${x.aiConf}%</span></div>
         <div class="compare-row"><span>Odds</span><span>${ewOdds||'—'}</span></div>
         <div class="compare-row"><span>EV per £1</span><span style="color:${ewEvCol}">${x.valueEv||'—'}</span></div>
-        <div class="compare-row"><span>Edge</span><span style="color:${ewEvCol}">${x.valueEdge?x.valueEdge+'%':'—'}</span></div>
+        <div class="compare-row"><span>Edge</span><span style="color:${ewEvCol}">${x.valueEdge||'—'}</span></div>
       </div>
     </div>`;
 
@@ -791,7 +791,7 @@ function buildFlipBack(x){
     h += `<div class="flip-back-grid">
       <div class="flip-back-stat"><div class="flip-back-stat-val" style="color:${col(x.blended||x.aiConf)}">${x.blended||x.aiConf}%</div><div class="flip-back-stat-label">CONFIDENCE</div></div>
       <div class="flip-back-stat"><div class="flip-back-stat-val" style="color:${vrCol}">${x.valueRating||'—'}</div><div class="flip-back-stat-label">VALUE</div></div>
-      <div class="flip-back-stat"><div class="flip-back-stat-val" style="color:var(--amber)">${x.valueEdge?x.valueEdge+'%':'—'}</div><div class="flip-back-stat-label">EDGE</div></div>
+      <div class="flip-back-stat"><div class="flip-back-stat-val" style="color:var(--amber)">${x.valueEdge||'—'}</div><div class="flip-back-stat-label">EDGE</div></div>
       <div class="flip-back-stat"><div class="flip-back-stat-val" style="color:${vrCol}">${x.valueEv||'—'}</div><div class="flip-back-stat-label">EV £1</div></div>
     </div>`;
 
