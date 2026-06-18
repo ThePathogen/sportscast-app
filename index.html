@@ -205,16 +205,18 @@ async function loadData(){
   if(!SHEET_ID||!API_KEY){renderSetupPrompt();return;}
   
   try{
-    const[mlbRows,racingRows,historyRows,betsRows,accaRows,autoBetRows]=await Promise.all([
+    const[mlbRows,racingRows,historyRows,betsRows,accaRows,autoBetRows,autoBetCoverRows]=await Promise.all([
       fetchSheet('Daily Summary','A4:S200'),
       fetchSheet('Racing','A3:Y200'),
       fetchSheet('History','A5:K2000'),
       fetchSheet('Bets','A2:I500').catch(()=>[]),
       fetchSheet('Accas','A2:H100').catch(()=>[]),
       fetchSheet('AutoBet','A2:K1000').catch(()=>[]),
+      fetchSheet('AutoBetCover','A2:K200').catch(()=>[]),
     ]);
     allData.bets=betsRows;
     allData.autoBets=(autoBetRows||[]).map(r=>({timestamp:r[0]||'',race:r[1]||'',ewHorse:r[2]||'',odds:r[3]||'',stakeEw:r[4]||'',totalOutlay:r[5]||'',valueRating:r[6]||'',edge:r[7]||'',confidence:r[8]||'',status:r[9]||'PENDING',wonOutright:r[10]||''}));
+    allData.autoBetCovers=(autoBetCoverRows||[]).map(r=>({timestamp:r[0]||'',coverType:r[1]||'',bets:r[2]||0,legs:r[3]||'',lineStake:r[4]||'',totalOutlay:r[5]||'',status:r[6]||'PENDING',winReturn:r[7]||'',placeReturn:r[8]||'',totalReturn:r[9]||'',pnl:r[10]||''}));
     allData.accas=(accaRows||[]).map(r=>({date:r[0]||'',type:r[1]||'',legs:r[2]||'',odds:r[3]||'',returns:r[4]||'',conf:r[5]||'',combinedProb:r[6]||'',selections:(r[7]||'')}));
     allData.mlb=mlbRows.map(r=>({date:r[0]||'',sport:r[1]||'MLB',team:r[2]||'',opponent:r[3]||'',winner:r[4]||'',score:r[5]||'',aiConf:parseInt(r[6])||0,blended:parseInt(r[7])||0,actual:r[8]||'',result:r[9]||'PENDING',time:r[11]||'TBD',recommendation:r[12]||'',kellyStake:r[13]||'',fixedStake:r[14]||'',edge:r[15]||'',valueRating:r[16]||'',valueEdge:r[17]||'',valueEv:r[18]||''}));
     const _rawRacing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winPick:r[2]||'',winOdds:r[3]||'',eachWay:r[4]||'',ewPlaceTerms:r[5]||'',aiConf:parseInt(r[6])||0,going:r[7]||'',ewResult:r[8]||'',ewRec:r[9]||'',winVsEwEv:r[10]||'',placeProb:r[11]||'',distance:r[12]||'',actual:r[13]||'',result:r[14]||'PENDING',time:r[15]||'',valueRating:r[16]||'',valueEdge:r[17]||'',valueEv:r[18]||'',kellyStake:r[19]||'',pickScore:parseFloat(r[20])||0,winProbability:r[21]||'',winOddsCol:r[22]||'',winEv:r[23]||'',winEdge:r[24]||'',get winner(){return this.eachWay?this.eachWay.split(' at ')[0].split(' -')[0].split(',')[0].trim():this.winPick;},get odds(){return this.eachWay?this.eachWay.match(/at ([\d\/]+)/)?.[1]||this.winOdds:this.winOdds;}}));
@@ -454,6 +456,29 @@ function renderStats(){
     <div style="font-size:10px;color:var(--muted);text-align:center;margin-top:-6px;margin-bottom:10px">
       ${ab.length} logged · ${abPending.length} pending · ${settledCount} settled (${placedCount} placed, ${unplacedCount} unplaced)<br>
       "What you'd have if you'd followed every auto-bet from £${STARTING_BANKROLL.toFixed(2)}"
+    </div>`;
+  }
+
+  // Cover Bet Dry Run — only logged on days 3+ picks already cleared the
+  // singles bar; a separate parallel ledger, not a replacement for the above.
+  const acb = allData.autoBetCovers||[];
+  if(acb.length){
+    const parseMoney2 = v => parseFloat((v||'').replace('£',''))||0;
+    const cbPending = acb.filter(c=>c.status==='PENDING');
+    const cbSettled = acb.filter(c=>c.status==='SETTLED');
+    const cbOutlay = cbSettled.reduce((s,c)=>s+parseMoney2(c.totalOutlay),0);
+    const cbReturn = cbSettled.reduce((s,c)=>s+parseMoney2(c.totalReturn),0);
+    const cbPnl = cbReturn - cbOutlay;
+    const cbCol = cbPnl>=0?'var(--green)':'var(--red)';
+
+    h+=`<div class="section-header" style="margin-top:16px">COVER BET DRY RUN <span style="color:var(--muted);font-size:9px">(SIMULATED — NOT REAL MONEY)</span></div>
+    <div class="stat-bar">
+      <div class="stat"><div class="stat-val">${acb.length}</div><div class="stat-label">LOGGED</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--amber)">${cbPending.length}</div><div class="stat-label">PENDING</div></div>
+      <div class="stat"><div class="stat-val" style="color:${cbCol}">${cbPnl>=0?'+':''}£${cbPnl.toFixed(2)}</div><div class="stat-label">SETTLED P&L</div></div>
+    </div>
+    <div style="font-size:10px;color:var(--muted);text-align:center;margin-top:-6px;margin-bottom:10px">
+      Only fires when 3+ picks already cleared the singles bar same day · compare against Auto-Bet above
     </div>`;
   }
 
