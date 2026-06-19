@@ -457,6 +457,36 @@ function renderStats(){
       ${ab.length} logged · ${abPending.length} pending · ${settledCount} settled (${placedCount} placed, ${unplacedCount} unplaced)<br>
       "What you'd have if you'd followed every auto-bet from £${STARTING_BANKROLL.toFixed(2)}"
     </div>`;
+
+    // Individual bet cards — pending (what it WOULD bet) shown first, most
+    // recent settled bets shown after for context. Same card style as the
+    // existing Accas top-picks list, for visual consistency across tabs.
+    const abStatusCol = s => s==='PLACED'?'var(--green)':s==='UNPLACED'?'var(--red)':'var(--amber)';
+    const renderAbCard = b => {
+      const col = abStatusCol(b.status);
+      const stakeDisp = b.stakeEw||'';
+      const won = b.wonOutright==='TRUE' ? ' <span style="color:var(--green);font-size:9px">WON OUTRIGHT</span>' : '';
+      return `<div style="background:var(--card);border:1px solid var(--border);border-left:3px solid ${col};border-radius:8px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+        <div style="flex:1">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:3px">🐎 ${b.race||''} · ${b.timestamp||''}</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px">${b.ewHorse||''} @ ${b.odds||''}${won}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">${b.valueRating||''} ${b.edge||''} · ${b.confidence||''} conf · E/W ${stakeDisp}/line</div>
+        </div>
+        <div style="font-size:13px;font-family:'Bebas Neue',sans-serif;color:${col};margin-left:8px;text-align:right">${b.status||'PENDING'}</div>
+      </div>`;
+    };
+
+    if(abPending.length){
+      h+=`<div class="section-header" style="margin-top:12px">PENDING — WHAT IT WOULD BET NEXT</div>`;
+      [...abPending].sort((a,b)=>(b.timestamp||'').localeCompare(a.timestamp||'')).forEach(b=>{h+=renderAbCard(b);});
+    }
+
+    const abRecentSettled = [...ab].filter(b=>b.status==='PLACED'||b.status==='UNPLACED')
+      .sort((a,b)=>(b.timestamp||'').localeCompare(a.timestamp||'')).slice(0,10);
+    if(abRecentSettled.length){
+      h+=`<div class="section-header" style="margin-top:12px">RECENTLY SETTLED</div>`;
+      abRecentSettled.forEach(b=>{h+=renderAbCard(b);});
+    }
   }
 
   // Cover Bet Dry Run — only logged on days 3+ picks already cleared the
@@ -480,6 +510,23 @@ function renderStats(){
     <div style="font-size:10px;color:var(--muted);text-align:center;margin-top:-6px;margin-bottom:10px">
       Only fires when 3+ picks already cleared the singles bar same day · compare against Auto-Bet above
     </div>`;
+
+    const cbStatusCol = s => s==='SETTLED'?'var(--green)':'var(--amber)';
+    [...acb].sort((a,b)=>(b.timestamp||'').localeCompare(a.timestamp||'')).forEach(c=>{
+      const col = cbStatusCol(c.status);
+      const pnlLine = c.status==='SETTLED'
+        ? `<div style="font-size:10px;color:${(parseMoney2(c.pnl)>=0)?'var(--green)':'var(--red)'};margin-top:2px">Return ${c.totalReturn||''} · P/L ${c.pnl||''}</div>`
+        : '';
+      h+=`<div style="background:var(--card);border:1px solid var(--border);border-left:3px solid ${col};border-radius:8px;padding:12px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px">${c.coverType||''}</div>
+          <div style="font-size:13px;font-family:'Bebas Neue',sans-serif;color:${col}">${c.status||''}</div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px">${c.legs||''}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px">${c.lineStake||''}/line · ${c.totalOutlay||''} total outlay</div>
+        ${pnlLine}
+      </div>`;
+    });
   }
 
   return h;
