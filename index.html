@@ -48,42 +48,6 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .badge.incorrect{color:var(--red);border-color:var(--red);background:rgba(255,61,61,0.08)}
 .card-time{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-left:auto}
 .empty{text-align:center;padding:48px 24px;color:var(--muted)}
-.flip-wrap{perspective:1000px;margin-bottom:10px;cursor:pointer}
-.flip-inner{position:relative;transform-style:preserve-3d;transition:transform 0.45s cubic-bezier(0.4,0,0.2,1)}
-.flip-inner.flipped{transform:rotateX(180deg)}
-.flip-front,.flip-back{backface-visibility:hidden;-webkit-backface-visibility:hidden;width:100%}
-.flip-front{position:relative}
-.flip-back{position:absolute;top:0;left:0;transform:rotateX(180deg);background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;min-height:100%}
-.flip-back-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;margin-bottom:4px}
-.flip-back-sub{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
-.flip-back-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
-.compare-wrap{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
-.compare-col{background:rgba(255,255,255,0.03);border-radius:8px;padding:8px}
-.compare-col.ew{border:1px solid rgba(50,200,100,0.25)}
-.compare-col.win{border:1px solid rgba(255,180,0,0.25)}
-.compare-head{font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:1px;margin-bottom:6px;text-align:center}
-.compare-row{display:flex;justify-content:space-between;font-size:10px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
-.compare-row span:first-child{color:var(--muted)}
-.flip-back-stat{background:rgba(255,255,255,0.03);border-radius:6px;padding:6px;text-align:center}
-.flip-back-stat-val{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:0.5px}
-.flip-back-stat-label{font-family:'DM Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:1px}
-.flip-back-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(30,42,30,0.4);font-size:10px}
-.flip-back-key{color:var(--muted);font-family:'DM Mono',monospace}
-.flip-back-val{font-family:'DM Mono',monospace;font-weight:500}
-.flip-back-hint{font-family:'DM Mono',monospace;font-size:8px;color:var(--muted);text-align:center;margin-top:8px;letter-spacing:1px}
-.odds-btn{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;background:var(--card2);border:1px solid var(--border);color:var(--muted);font-size:11px;margin-left:5px;cursor:pointer;vertical-align:middle}
-.odds-modal-overlay{display:none;position:fixed;inset:0;z-index:400;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:24px}
-.odds-modal-overlay.open{display:flex}
-.odds-modal{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;width:100%;max-width:320px}
-.odds-modal-title{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;margin-bottom:14px;text-align:center}
-.odds-input-row{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px}
-.odds-input{width:64px;text-align:center;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 6px;color:var(--text);font-family:'Bebas Neue',sans-serif;font-size:20px}
-.odds-slash{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--muted)}
-.odds-result{text-align:center;padding:14px;background:rgba(50,200,100,0.08);border:1px solid rgba(50,200,100,0.25);border-radius:10px;margin-bottom:14px}
-.odds-result-val{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--green);letter-spacing:1px}
-.odds-result-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;margin-top:2px}
-.odds-implied{text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:14px}
-.odds-close-btn{width:100%;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px;cursor:pointer}
 .analytics-sheet{position:fixed;bottom:0;left:0;right:0;z-index:150;background:var(--surface);border-radius:16px 16px 0 0;border-top:1px solid var(--border);transform:translateY(calc(100% - 36px));transition:transform 0.35s cubic-bezier(0.4,0,0.2,1)}
 .analytics-sheet.open{transform:translateY(0)}
 .analytics-pill{display:flex;align-items:center;justify-content:center;height:36px;cursor:pointer;touch-action:none}
@@ -205,21 +169,17 @@ async function loadData(){
   if(!SHEET_ID||!API_KEY){renderSetupPrompt();return;}
   
   try{
-    const[mlbRows,racingRows,historyRows,betsRows,accaRows,autoBetRows,autoBetCoverRows]=await Promise.all([
+    const[mlbRows,racingRows,historyRows,betsRows,accaRows]=await Promise.all([
       fetchSheet('Daily Summary','A4:S200'),
-      fetchSheet('Racing','A3:Y200'),
+      fetchSheet('Racing','A3:T200'),
       fetchSheet('History','A5:K2000'),
       fetchSheet('Bets','A2:I500').catch(()=>[]),
       fetchSheet('Accas','A2:H100').catch(()=>[]),
-      fetchSheet('AutoBet','A2:K1000').catch(()=>[]),
-      fetchSheet('AutoBetCover','A2:K200').catch(()=>[]),
     ]);
     allData.bets=betsRows;
-    allData.autoBets=(autoBetRows||[]).map(r=>({timestamp:r[0]||'',race:r[1]||'',ewHorse:r[2]||'',odds:r[3]||'',stakeEw:r[4]||'',totalOutlay:r[5]||'',valueRating:r[6]||'',edge:r[7]||'',confidence:r[8]||'',status:r[9]||'PENDING',wonOutright:r[10]||''}));
-    allData.autoBetCovers=(autoBetCoverRows||[]).map(r=>({timestamp:r[0]||'',coverType:r[1]||'',bets:r[2]||0,legs:r[3]||'',lineStake:r[4]||'',totalOutlay:r[5]||'',status:r[6]||'PENDING',winReturn:r[7]||'',placeReturn:r[8]||'',totalReturn:r[9]||'',pnl:r[10]||''}));
     allData.accas=(accaRows||[]).map(r=>({date:r[0]||'',type:r[1]||'',legs:r[2]||'',odds:r[3]||'',returns:r[4]||'',conf:r[5]||'',combinedProb:r[6]||'',selections:(r[7]||'')}));
     allData.mlb=mlbRows.map(r=>({date:r[0]||'',sport:r[1]||'MLB',team:r[2]||'',opponent:r[3]||'',winner:r[4]||'',score:r[5]||'',aiConf:parseInt(r[6])||0,blended:parseInt(r[7])||0,actual:r[8]||'',result:r[9]||'PENDING',time:r[11]||'TBD',recommendation:r[12]||'',kellyStake:r[13]||'',fixedStake:r[14]||'',edge:r[15]||'',valueRating:r[16]||'',valueEdge:r[17]||'',valueEv:r[18]||''}));
-    const _rawRacing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winPick:r[2]||'',winOdds:r[3]||'',eachWay:r[4]||'',ewPlaceTerms:r[5]||'',aiConf:parseInt(r[6])||0,going:r[7]||'',ewResult:r[8]||'',ewRec:r[9]||'',winVsEwEv:r[10]||'',placeProb:r[11]||'',distance:r[12]||'',actual:r[13]||'',result:r[14]||'PENDING',time:r[15]||'',valueRating:r[16]||'',valueEdge:r[17]||'',valueEv:r[18]||'',kellyStake:r[19]||'',pickScore:parseFloat(r[20])||0,winProbability:r[21]||'',winOddsCol:r[22]||'',winEv:r[23]||'',winEdge:r[24]||'',get winner(){return this.eachWay?this.eachWay.split(' at ')[0].split(' -')[0].split(',')[0].trim():this.winPick;},get odds(){return this.eachWay?this.eachWay.match(/at ([\d\/]+)/)?.[1]||this.winOdds:this.winOdds;}}));
+    const _rawRacing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winPick:r[2]||'',winOdds:r[3]||'',eachWay:r[4]||'',ewPlaceTerms:r[5]||'',aiConf:parseInt(r[6])||0,going:r[7]||'',ewResult:r[8]||'',ewRec:r[9]||'',winVsEwEv:r[10]||'',placeProb:r[11]||'',distance:r[12]||'',actual:r[13]||'',result:r[14]||'PENDING',time:r[15]||'',valueRating:r[16]||'',valueEdge:r[17]||'',valueEv:r[18]||'',kellyStake:r[19]||'',pickScore:parseFloat(r[20])||0,get winner(){return this.eachWay?this.eachWay.split(' at ')[0].split(' -')[0].split(',')[0].trim():this.winPick;},get odds(){return this.eachWay?this.eachWay.match(/at ([\d\/]+)/)?.[1]||this.winOdds:this.winOdds;}}));
   const _seenRacing=new Set();
   allData.racing=_rawRacing.filter(x=>{if(!x.winner||!x.race)return false;const k=x.race+'|'+x.winner;if(_seenRacing.has(k))return false;_seenRacing.add(k);return true;});
   //allData.racing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winner:r[2]||'',odds:r[3]||'',eachWay:r[4]||'',ewPlaceTerms:r[5]||'',aiConf:parseInt(r[6])||0,going:r[7]||'',ewResult:r[8]||'',ewRec:r[9]||'',winVsEwEv:r[10]||'',placeProb:r[11]||'',distance:r[12]||'',actual:r[13]||'',result:r[14]||'PENDING',time:r[15]||''}));
@@ -244,13 +204,11 @@ async function loadData(){
 
 function confColor(p){return p>=70?'var(--green)':p>=45?'var(--amber)':'var(--red)';}
 function confClass(p){return p>=70?'high':p>=45?'medium':'low';}
-function badge(r){const u=(r||'').toUpperCase();const disp=u==='WIN PLACED'?'PLACED':r;if(u==='CORRECT'||u==='PLACED'||u==='WIN PLACED')return`<span class="badge correct">✓ ${disp}</span>`;if(u==='INCORRECT'||u==='UNPLACED')return`<span class="badge incorrect">✗ ${disp}</span>`;return '';}
+function badge(r){const u=(r||'').toUpperCase();if(u==='CORRECT'||u==='PLACED'||u==='WIN PLACED')return`<span class="badge correct">✓ ${r}</span>`;if(u==='INCORRECT'||u==='UNPLACED')return`<span class="badge incorrect">✗ ${r}</span>`;return '';}
 
 function card(winner,sub,conf,result,time,odds,extra,rec,kelly,fixed,edge,valueRating,valueEdge,valueEv){
   const cc=confClass(conf),col=confColor(conf);
-  const _oddsParts=(odds||'').match(/^(\d+)\/(\d+)$/);
-  const oddsCalcBtn=odds?`<span class="odds-btn" onclick="event.stopPropagation();openOddsConverter(${_oddsParts?_oddsParts[1]:''},${_oddsParts?_oddsParts[2]:''})">🧮</span>`:'';
-  const oddsStr=odds?`<span class="odds"> ${odds}</span>${oddsCalcBtn}`:'';
+  const oddsStr=odds?`<span class="odds"> ${odds}</span>`:'';
   const extraStr=extra?`<div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-family:'DM Mono',monospace">${extra}</div>`:'';
   const recCol=rec==='BET'||rec==='TRADE'?'var(--green)':rec==='SKIP'?'var(--red)':'var(--amber)';
   const stakeStr=(rec||kelly)?`<div style="display:flex;gap:10px;margin-top:8px;padding:8px;background:rgba(255,255,255,0.03);border-radius:6px;font-size:10px">${rec?`<span style="color:${recCol};letter-spacing:1px;font-weight:500">${rec}</span>`:''} ${kelly?`<span style="color:var(--muted)">Kelly: <span style="color:var(--green)">${kelly}</span></span>`:''} ${fixed?`<span style="color:var(--muted)">Fixed: <span style="color:var(--text)">${fixed}</span></span>`:''} ${edge?`<span style="color:var(--muted)">Edge: <span style="color:var(--amber)">${edge}</span></span>`:''}</div>`:'';
@@ -265,7 +223,7 @@ function renderMLB(){
   const d=allData.mlb;if(!d.length)return empty('⚾','NO MLB TODAY',"Run the daily sweep to load today's predictions");
   const high=d.filter(x=>x.blended>=70).length,med=d.filter(x=>x.blended>=45&&x.blended<70).length,low=d.filter(x=>x.blended<45).length;
   let h=`<div class="stat-bar"><div class="stat"><div class="stat-val green">${high}</div><div class="stat-label">HIGH CONF</div></div><div class="stat"><div class="stat-val amber">${med}</div><div class="stat-label">MODERATE</div></div><div class="stat"><div class="stat-val red">${low}</div><div class="stat-label">LOW CONF</div></div></div><div class="section-header">TODAY'S PREDICTIONS</div>`;
-  d.forEach(x=>{const m=x.opponent?`${x.opponent} @ ${x.team}`:x.team;h+=flipWrap(card(x.winner,m,x.blended||x.aiConf,x.result,x.time,'','',x.recommendation,x.kellyStake,x.fixedStake,x.edge,x.valueRating,x.valueEdge,x.valueEv),{winner:x.winner,team:x.team||'',opponent:x.opponent||'',blended:x.blended||0,aiConf:x.aiConf||0,valueRating:x.valueRating||'',valueEdge:x.valueEdge||'',valueEv:x.valueEv||'',kellyStake:x.kellyStake||'',recommendation:x.recommendation||'',win_probability:x.win_probability||'',form_rating:x.form_rating||''});});
+  d.forEach(x=>{const m=x.opponent?`${x.opponent} @ ${x.team}`:x.team;h+=card(x.winner,m,x.blended||x.aiConf,x.result,x.time,'',x.score,x.recommendation,x.kellyStake,x.fixedStake,x.edge,x.valueRating,x.valueEdge,x.valueEv);});
   return h;
 }
 function renderRacing(){
@@ -277,15 +235,15 @@ function renderRacing(){
     const ewRecCol = x.ewRec==='BET E/W'||x.ewRec==='E/W'?'var(--green)':x.ewRec==='SKIP'?'var(--muted)':'var(--amber)';
     const scoreCol = x.pickScore>=72?'var(--green)':x.pickScore>=62?'var(--amber)':'var(--muted)';
     const scoreBadge = x.pickScore>0?`<span style="font-size:8px;color:${scoreCol};border:1px solid ${scoreCol};border-radius:3px;padding:1px 5px;margin-left:6px">SCORE ${x.pickScore.toFixed(0)}</span>"`:'';
-    // Parse odds from eachWay string
+    // Parse odds — from eachWay string or winOdds
     const ewOddsRaw = x.odds || (x.eachWay?(x.eachWay.match(/at ([\d\/]+)/)||[])[1]||'':'') || '';
     const oddsDisplay = ewOddsRaw ? `<span style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--amber);background:rgba(255,180,0,0.1);border:1px solid rgba(255,180,0,0.3);border-radius:4px;padding:2px 7px;margin-left:6px">${ewOddsRaw}</span>` : '';
     const ewLabel = x.ewRec==='SKIP'
-      ? `<span style="color:var(--muted);font-size:11px">⛔ SKIP — odds under 6/1${ewOddsRaw?' ('+ewOddsRaw+')':''}</span>`
+      ? `<span style="color:var(--muted);font-size:11px">⛔ SKIP — odds under 8/1${ewOddsRaw?' ('+ewOddsRaw+')':''}</span>`
       : `<span style="color:var(--green);font-size:11px;font-weight:600">✅ BET E/W${ewOddsRaw?' @ '+ewOddsRaw:''}</span>`;
-    const winNote = x.winPick&&x.winPick!==x.winner?`<span style="color:var(--muted);font-size:10px">Win pick: ${x.winPick}${x.winOdds?' ('+x.winOdds+')':''}</span>`:'';
-    const distBadge = x.distance?`<span style="color:var(--muted);font-size:10px;background:var(--card2);padding:2px 6px;border-radius:4px;margin-left:4px">${x.distance}</span>`:''; const goingBadge = x.going?`<span style="color:var(--muted);font-size:10px;background:var(--card2);padding:2px 6px;border-radius:4px;margin-left:4px">${x.going}</span>`:''; const extraInfo = [ewLabel, winNote, x.ewPlaceTerms?`Place terms: ${x.ewPlaceTerms}`:'', distBadge, goingBadge].filter(Boolean).join(' | ');
-    h+=flipWrap(card(x.winner,x.race,x.aiConf,x.result,x.time,x.odds,extraInfo,x.ewRec,x.kellyStake,'',x.valueEdge,x.ewRec==='SKIP'?'NO VALUE':x.valueRating,x.valueEdge,x.valueEv),{winner:x.winner,race:x.race,aiConf:x.aiConf,eachWay:x.eachWay||'',winPick:x.winPick||'',winOdds:x.winOdds||'',ewRec:x.ewRec||'',ewPlaceTerms:x.ewPlaceTerms||'',valueRating:x.valueRating||'',valueEdge:x.valueEdge||'',valueEv:x.valueEv||'',kellyStake:x.kellyStake||'',going:x.going||'',distance:x.distance||'',pickScore:x.pickScore||0,ew_trainer:x.ew_trainer||'',ew_jockey:x.ew_jockey||'',winProbability:x.winProbability||'',winEv:x.winEv||'',winEdge:x.winEdge||''});
+    const winNote = x.winPick&&x.winPick!==x.winner?`Win pick: ${x.winPick} (${x.winOdds})`:'';
+    const distBadge = x.distance?`<span style="color:var(--muted);font-size:10px;background:var(--card2);padding:2px 6px;border-radius:4px;margin-left:4px">${x.distance}</span>`:''; const goingBadge = x.going?`<span style="color:var(--muted);font-size:10px;background:var(--card2);padding:2px 6px;border-radius:4px;margin-left:4px">${x.going}</span>`:''; const extraInfo = [ewLabel, winNote, x.ewPlaceTerms?`Place terms: ${x.ewPlaceTerms}`:'', x.winVsEwEv, distBadge, goingBadge].filter(Boolean).join(' | ');
+    h+=card(x.winner,x.race,x.aiConf,x.ewResult||x.result,x.time,x.odds,extraInfo,x.ewRec,x.kellyStake,'',x.valueEdge,x.ewRec==='SKIP'?'NO VALUE':x.valueRating,x.valueEdge,x.valueEv);
   });
   return h;
 }
@@ -294,11 +252,10 @@ function renderHistory(){
   const d=allData.history.filter(x=>x.date>=_twoDaysAgo).slice().reverse();if(!d.length)return empty('📋','NO HISTORY YET','Make some predictions to build your history');
   let h='<div class="section-header">RECENT PREDICTIONS</div>';
   d.forEach(x=>{const s=x.sport==='RACING'?x.team:(x.opponent?`${x.opponent} @ ${x.team}`:x.team);const _r=x.result||'';
-    const _rDisp=_r==='WIN PLACED'?'PLACED':_r;
     const resultBadge=_r==='CORRECT'||_r==='PLACED'||_r==='WIN PLACED'
-      ?`<span style="color:var(--green);font-size:11px;font-weight:500">✓ ${_rDisp}</span>`
+      ?`<span style="color:var(--green);font-size:11px;font-weight:500">✓ ${_r}</span>`
       :_r==='INCORRECT'||_r==='UNPLACED'
-      ?`<span style="color:var(--red);font-size:11px;font-weight:500">✗ ${_rDisp}</span>`
+      ?`<span style="color:var(--red);font-size:11px;font-weight:500">✗ ${_r}</span>`
       :`<span style="color:var(--muted);font-size:11px">⏳ PENDING</span>`;const ewOdds=x.sport==='RACING'&&x.ewPick?x.ewPick.match(/at ([\d\/]+)/)?.[1]||'':'';
     const oddsTag=ewOdds?`<span class="odds"> ${ewOdds}</span>`:'';
     const ewLabel=x.sport==='RACING'&&x.ewPick&&x.ewPick.toLowerCase()!=='none'?`<span style="font-size:9px;color:var(--muted);letter-spacing:1px;margin-left:6px">E/W</span>`:'';
@@ -382,13 +339,12 @@ function renderStats(){
   // Prediction accuracy
   h+='<div class="section-header">PREDICTION ACCURACY</div>';
   Object.entries(s).forEach(([sport,st])=>{
-    const isRacing=(sport||'').toUpperCase()==='RACING';
     const tot=st.correct+st.incorrect,acc=tot>0?Math.round(st.correct/tot*100):0,col=acc>=50?'var(--green)':acc>=35?'var(--amber)':'var(--red)';
     const placed=st.placed||0,unplaced=st.unplaced||0,ewTot=placed+unplaced;
     const placeRate=ewTot>0?Math.round(placed/ewTot*100):0;
     const placeCol=placeRate>=35?'var(--green)':placeRate>=20?'var(--amber)':'var(--red)';
     h+=`<div class="accuracy-card"><div class="accuracy-title">${sport}</div>
-      <div class="accuracy-row"><span>${isRacing?'Win Pick Accuracy':'Win Accuracy'}</span><span class="accuracy-pct" style="color:${col}">${acc}%</span></div>
+      <div class="accuracy-row"><span>Win Accuracy</span><span class="accuracy-pct" style="color:${col}">${acc}%</span></div>
       <div class="accuracy-row"><span>✓ Correct</span><span style="color:var(--green)">${st.correct}</span></div>
       <div class="accuracy-row"><span>✗ Incorrect</span><span style="color:var(--red)">${st.incorrect}</span></div>
       ${ewTot>0?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
@@ -396,7 +352,7 @@ function renderStats(){
         <div class="accuracy-row"><span>✓ Placed</span><span style="color:var(--green)">${placed}</span></div>
         <div class="accuracy-row"><span>✗ Unplaced</span><span style="color:var(--red)">${unplaced}</span></div>
       </div>`:''}
-      <div style="margin-top:10px"><div class="conf-bar" style="height:6px"><div class="conf-fill" style="width:${isRacing?placeRate:acc}%;background:${isRacing?placeCol:col}"></div></div></div></div>`;
+      <div style="margin-top:10px"><div class="conf-bar" style="height:6px"><div class="conf-fill" style="width:${acc}%;background:${col}"></div></div></div></div>`;
   });
   let tc=0,ti=0;Object.values(s).forEach(x=>{tc+=x.correct;ti+=x.incorrect;});
   const tot=tc+ti,oa=tot>0?Math.round(tc/tot*100):0,oc=oa>=50?'var(--green)':oa>=35?'var(--amber)':'var(--red)';
@@ -405,130 +361,6 @@ function renderStats(){
     <div class="stat"><div class="stat-val" style="color:${plCol}">${bpl.total>=0?'+':''}£${bpl.total.toFixed(0)}</div><div class="stat-label">BET P&L</div></div>
     <div class="stat"><div class="stat-val" style="color:${plCol}">${roi>=0?'+':''}${roi.toFixed(0)}%</div><div class="stat-label">ROI</div></div>
   </div>`;
-
-  // Auto-Bet Dry Run — simulated running bankroll, not real money.
-  // Mirrors auto_bet.py's simulate_bankroll(): replays every SETTLED bet in
-  // chronological order against a standalone bankroll starting at £5, paying
-  // both win+place legs when wonOutright is confirmed TRUE, otherwise
-  // falling back to place-side-only (conservative, for older entries settled
-  // before that flag existed).
-  const ab = allData.autoBets||[];
-  if(ab.length){
-    const STARTING_BANKROLL = 5.00;
-    const parseMoney = v => parseFloat((v||'').replace('£',''))||0;
-    const oddsToDec = s => { const m=(s||'').match(/(\d+)\/(\d+)/); return m?1+(parseInt(m[1])/parseInt(m[2])):0; };
-
-    const abPending = ab.filter(b=>b.status==='PENDING');
-    const sorted = [...ab].sort((a,b)=>(a.timestamp||'').localeCompare(b.timestamp||''));
-
-    let bankroll = STARTING_BANKROLL;
-    let settledCount = 0, placedCount = 0, unplacedCount = 0;
-    sorted.forEach(b=>{
-      if(b.status!=='PLACED'&&b.status!=='UNPLACED') return;
-      settledCount++;
-      const outlay = parseMoney(b.totalOutlay);
-      const stakeEw = parseMoney(b.stakeEw);
-      const dec = oddsToDec(b.odds);
-      let change = -outlay;
-      if(b.status==='PLACED'){
-        placedCount++;
-        const placeDec = dec>1 ? (dec-1)/5+1 : 0;
-        if(b.wonOutright==='TRUE'){
-          change += stakeEw*dec + stakeEw*placeDec; // both legs pay
-        } else {
-          change += stakeEw*placeDec; // place leg only (or unknown — conservative)
-        }
-      } else {
-        unplacedCount++;
-      }
-      bankroll += change;
-    });
-
-    const pnl = bankroll - STARTING_BANKROLL;
-    const pnlCol = pnl>=0?'var(--green)':'var(--red)';
-
-    h+=`<div class="section-header" style="margin-top:16px">AUTO-BET DRY RUN <span style="color:var(--muted);font-size:9px">(SIMULATED — NOT REAL MONEY)</span></div>
-    <div class="stat-bar">
-      <div class="stat"><div class="stat-val">£${STARTING_BANKROLL.toFixed(2)}</div><div class="stat-label">STARTING</div></div>
-      <div class="stat"><div class="stat-val" style="color:${pnlCol}">£${bankroll.toFixed(2)}</div><div class="stat-label">SIM BANKROLL NOW</div></div>
-      <div class="stat"><div class="stat-val" style="color:${pnlCol}">${pnl>=0?'+':''}£${pnl.toFixed(2)}</div><div class="stat-label">TOTAL P&L</div></div>
-    </div>
-    <div style="font-size:10px;color:var(--muted);text-align:center;margin-top:-6px;margin-bottom:10px">
-      ${ab.length} logged · ${abPending.length} pending · ${settledCount} settled (${placedCount} placed, ${unplacedCount} unplaced)<br>
-      "What you'd have if you'd followed every auto-bet from £${STARTING_BANKROLL.toFixed(2)}"
-    </div>`;
-
-    // Individual bet cards — pending (what it WOULD bet) shown first, most
-    // recent settled bets shown after for context. Same card style as the
-    // existing Accas top-picks list, for visual consistency across tabs.
-    const abStatusCol = s => s==='PLACED'?'var(--green)':s==='UNPLACED'?'var(--red)':'var(--amber)';
-    const renderAbCard = b => {
-      const col = abStatusCol(b.status);
-      const stakeDisp = b.stakeEw||'';
-      const won = b.wonOutright==='TRUE' ? ' <span style="color:var(--green);font-size:9px">WON OUTRIGHT</span>' : '';
-      return `<div style="background:var(--card);border:1px solid var(--border);border-left:3px solid ${col};border-radius:8px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
-        <div style="flex:1">
-          <div style="font-size:10px;color:var(--muted);margin-bottom:3px">🐎 ${b.race||''} · ${b.timestamp||''}</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px">${b.ewHorse||''} @ ${b.odds||''}${won}</div>
-          <div style="font-size:10px;color:var(--muted);margin-top:2px">${b.valueRating||''} ${b.edge||''} · ${b.confidence||''} conf · E/W ${stakeDisp}/line</div>
-        </div>
-        <div style="font-size:13px;font-family:'Bebas Neue',sans-serif;color:${col};margin-left:8px;text-align:right">${b.status||'PENDING'}</div>
-      </div>`;
-    };
-
-    if(abPending.length){
-      h+=`<div class="section-header" style="margin-top:12px">PENDING — WHAT IT WOULD BET NEXT</div>`;
-      [...abPending].sort((a,b)=>(b.timestamp||'').localeCompare(a.timestamp||'')).forEach(b=>{h+=renderAbCard(b);});
-    }
-
-    const abRecentSettled = [...ab].filter(b=>b.status==='PLACED'||b.status==='UNPLACED')
-      .sort((a,b)=>(b.timestamp||'').localeCompare(a.timestamp||'')).slice(0,10);
-    if(abRecentSettled.length){
-      h+=`<div class="section-header" style="margin-top:12px">RECENTLY SETTLED</div>`;
-      abRecentSettled.forEach(b=>{h+=renderAbCard(b);});
-    }
-  }
-
-  // Cover Bet Dry Run — only logged on days 3+ picks already cleared the
-  // singles bar; a separate parallel ledger, not a replacement for the above.
-  const acb = allData.autoBetCovers||[];
-  if(acb.length){
-    const parseMoney2 = v => parseFloat((v||'').replace('£',''))||0;
-    const cbPending = acb.filter(c=>c.status==='PENDING');
-    const cbSettled = acb.filter(c=>c.status==='SETTLED');
-    const cbOutlay = cbSettled.reduce((s,c)=>s+parseMoney2(c.totalOutlay),0);
-    const cbReturn = cbSettled.reduce((s,c)=>s+parseMoney2(c.totalReturn),0);
-    const cbPnl = cbReturn - cbOutlay;
-    const cbCol = cbPnl>=0?'var(--green)':'var(--red)';
-
-    h+=`<div class="section-header" style="margin-top:16px">COVER BET DRY RUN <span style="color:var(--muted);font-size:9px">(SIMULATED — NOT REAL MONEY)</span></div>
-    <div class="stat-bar">
-      <div class="stat"><div class="stat-val">${acb.length}</div><div class="stat-label">LOGGED</div></div>
-      <div class="stat"><div class="stat-val" style="color:var(--amber)">${cbPending.length}</div><div class="stat-label">PENDING</div></div>
-      <div class="stat"><div class="stat-val" style="color:${cbCol}">${cbPnl>=0?'+':''}£${cbPnl.toFixed(2)}</div><div class="stat-label">SETTLED P&L</div></div>
-    </div>
-    <div style="font-size:10px;color:var(--muted);text-align:center;margin-top:-6px;margin-bottom:10px">
-      Only fires when 3+ picks already cleared the singles bar same day · compare against Auto-Bet above
-    </div>`;
-
-    const cbStatusCol = s => s==='SETTLED'?'var(--green)':'var(--amber)';
-    [...acb].sort((a,b)=>(b.timestamp||'').localeCompare(a.timestamp||'')).forEach(c=>{
-      const col = cbStatusCol(c.status);
-      const pnlLine = c.status==='SETTLED'
-        ? `<div style="font-size:10px;color:${(parseMoney2(c.pnl)>=0)?'var(--green)':'var(--red)'};margin-top:2px">Return ${c.totalReturn||''} · P/L ${c.pnl||''}</div>`
-        : '';
-      h+=`<div style="background:var(--card);border:1px solid var(--border);border-left:3px solid ${col};border-radius:8px;padding:12px;margin-bottom:8px">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px">${c.coverType||''}</div>
-          <div style="font-size:13px;font-family:'Bebas Neue',sans-serif;color:${col}">${c.status||''}</div>
-        </div>
-        <div style="font-size:10px;color:var(--muted);margin-top:3px">${c.legs||''}</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:3px">${c.lineStake||''}/line · ${c.totalOutlay||''} total outlay</div>
-        ${pnlLine}
-      </div>`;
-    });
-  }
-
   return h;
 }
 function renderSetupPrompt(){document.getElementById('content').innerHTML=`<div style="padding:24px 0"><div class="empty"><div class="empty-icon">⚙️</div><div class="empty-title">SETUP REQUIRED</div><div class="empty-sub" style="margin-bottom:20px">Connect your Google Sheet to see predictions on your phone</div></div><div class="setup-hint" onclick="openConfig()">Tap here to enter your Google Sheets ID and API Key →</div></div>`;}
@@ -716,222 +548,6 @@ function parseAnalyticsSheet(rows){
   return data;
 }
 
-// ── Odds Converter ──────────────────────────────────────────────────────────
-function openOddsConverter(num, den){
-  const overlay = document.getElementById('odds-modal-overlay');
-  const numInput = document.getElementById('odds-num');
-  const denInput = document.getElementById('odds-den');
-  numInput.value = num || '';
-  denInput.value = den || '';
-  overlay.classList.add('open');
-  updateOddsResult();
-  setTimeout(()=>numInput.focus(), 100);
-}
-
-function closeOddsConverter(e){
-  if(e && e.target !== document.getElementById('odds-modal-overlay')) return;
-  document.getElementById('odds-modal-overlay').classList.remove('open');
-}
-
-function updateOddsResult(){
-  const num = parseFloat(document.getElementById('odds-num').value);
-  const den = parseFloat(document.getElementById('odds-den').value);
-  const resultEl = document.getElementById('odds-result-val');
-  const impliedEl = document.getElementById('odds-implied');
-  if(!num || !den || den===0){
-    resultEl.textContent = '—';
-    impliedEl.textContent = '';
-    return;
-  }
-  const decimal = (num/den) + 1;
-  const implied = (1/decimal)*100;
-  resultEl.textContent = decimal.toFixed(3);
-  impliedEl.textContent = `Implied win chance: ${implied.toFixed(1)}%`;
-}
-
-// ── Cover Bet Builder ───────────────────────────────────────────────────────
-const COVER_BETS = {
-  3: {name:'Patent',      bets:7,   desc:'3 singles, 3 doubles, 1 treble'},
-  4: {name:'Lucky 15',    bets:15,  desc:'4 singles, 6 doubles, 4 trebles, 1 four-fold'},
-  5: {name:'Lucky 31',    bets:31,  desc:'5 singles, 10 doubles, 10 trebles, 5 four-folds, 1 five-fold'},
-  6: {name:'Lucky 63',    bets:63,  desc:'6 singles, 15 doubles, 20 trebles, 15 four-folds, 6 five-folds, 1 six-fold'},
-  7: {name:'Super Heinz', bets:120, desc:'full cover on 7 selections'},
-  8: {name:'Goliath',     bets:247, desc:'full cover on 8 selections'},
-};
-
-function buildCoverBetText(picks, label){
-  const n = picks.length;
-  const cb = COVER_BETS[Math.min(n,8)];
-  // Plain selection names only — no confidence, ready to paste straight into a bet builder
-  let text = picks.map(p=>p.name).join('\n');
-  return {cb, text};
-}
-
-function copyToClipboard(text, btnEl){
-  const done = ()=>{
-    const orig = btnEl.textContent;
-    btnEl.textContent = '✓ COPIED';
-    setTimeout(()=>{ btnEl.textContent = orig; }, 1500);
-  };
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(text).then(done).catch(()=>{
-      _fallbackCopy(text); done();
-    });
-  } else {
-    _fallbackCopy(text); done();
-  }
-}
-
-function _fallbackCopy(text){
-  const ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.position = 'fixed';
-  ta.style.left = '-9999px';
-  document.body.appendChild(ta);
-  ta.select();
-  try{ document.execCommand('copy'); }catch(e){}
-  document.body.removeChild(ta);
-}
-
-function renderCoverBetSection(mlbPicks, racingPicks){
-  const MIN_PICKS = 3;
-  let h = '';
-
-  const buildBlock = (picks, label, icon)=>{
-    if(picks.length < MIN_PICKS) return '';
-    const {cb, text} = buildCoverBetText(picks, label);
-    const listId = 'coverbet_'+label.replace(/\s+/g,'_')+'_'+picks.length;
-    const _safeText = text.replace(/'/g,"\\'").replace(/\n/g,'\\n');
-    return `<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:17px">${icon} ${cb.name.toUpperCase()}</div>
-        <div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace">${cb.bets} BETS</div>
-      </div>
-      <div style="font-size:10px;color:var(--muted);margin-bottom:10px">${picks.length} picks at 70%+ · ${label}</div>
-      ${picks.map((p,i)=>`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(30,42,30,0.4);font-size:12px"><span>${i+1}. ${p.name}${p.sub?' <span style=\"color:var(--muted);font-size:10px\">('+p.sub+')</span>':''}</span><span style="color:var(--amber)">${p.conf}%</span></div>`).join('')}
-      <button onclick="copyToClipboard('${_safeText}',this)" style="width:100%;margin-top:10px;background:var(--green);color:#000;border:none;border-radius:8px;padding:10px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px;cursor:pointer">📋 COPY BET LIST</button>
-    </div>`;
-  };
-
-  const blocks = [
-    buildBlock(mlbPicks, 'MLB', '⚾'),
-    buildBlock(racingPicks, 'RACING', '🐎'),
-  ].filter(Boolean);
-
-  if(!blocks.length) return '';
-
-  h += '<div class="section-header" style="margin-top:16px">COVER BET BUILDER</div>';
-  h += blocks.join('');
-  return h;
-}
-
-// ── Card Flip ────────────────────────────────────────────────────────────────
-function flipWrap(cardHtml, dataObj){
-  const d = btoa(unescape(encodeURIComponent(JSON.stringify(dataObj))));
-  return `<div class="flip-wrap" onclick="flipCard(this)" data-x="${d}"><div class="flip-inner"><div class="flip-front">${cardHtml}</div><div class="flip-back"></div></div></div>`;
-}
-let _flippedCard = null;
-
-function flipCard(el){
-  const x = JSON.parse(decodeURIComponent(escape(atob(el.dataset.x||'e30='))));
-  // Close any currently flipped card
-  if(_flippedCard && _flippedCard !== el){
-    const _prevInner = _flippedCard.querySelector('.flip-inner');
-    const _prevFront  = _flippedCard.querySelector('.flip-front');
-    _prevInner.classList.remove('flipped');
-    setTimeout(()=>{ _prevInner.style.height = _prevFront.offsetHeight+'px'; }, 450);
-    _flippedCard = null;
-  }
-  const inner = el.querySelector('.flip-inner');
-  const front = el.querySelector('.flip-front');
-  const back  = el.querySelector('.flip-back');
-  const isFlipped = inner.classList.contains('flipped');
-
-  if(isFlipped){
-    inner.classList.remove('flipped');
-    // Reset height back to the front face after the flip animation finishes
-    setTimeout(()=>{ inner.style.height = front.offsetHeight+'px'; }, 450);
-    _flippedCard = null;
-    return;
-  }
-
-  // Build back content if not already built
-  if(!back.dataset.built){
-    back.innerHTML = buildFlipBack(x) + '<div class="flip-back-hint">TAP TO FLIP BACK</div>';
-    back.dataset.built = '1';
-  }
-  // Match height to whichever face is taller while flipped open
-  inner.style.height = Math.max(front.offsetHeight, back.offsetHeight)+'px';
-  inner.classList.add('flipped');
-  _flippedCard = el;
-}
-
-function buildFlipBack(x){
-  const col = v => v>=70?'var(--green)':v>=45?'var(--amber)':'var(--red)';
-  const vCol = v => v==='STRONG VALUE'||v==='VALUE'?'var(--green)':v==='MARGINAL'||v==='FAIR'?'var(--amber)':'var(--red)';
-  const row = (k,v,c) => v?`<div class="flip-back-row"><span class="flip-back-key">${k}</span><span class="flip-back-val" style="color:${c||'var(--text)'}">${v}</span></div>`:'';
-  let h = '';
-
-  if(x.race||x.ewRec){
-    // Racing
-    const ewHorse = (x.eachWay||'').split(' at ')[0].trim()||x.winner||'';
-    const ewOdds  = (x.eachWay||'').match(/at ([\d\/]+)/)?.[1]||'';
-    const vrCol   = vCol(x.valueRating||'');
-    const winEvNum = parseFloat((x.winEv||'').replace('£',''))||0;
-    const ewEvNum  = parseFloat((x.valueEv||'').replace('£',''))||0;
-    const winEvCol = winEvNum>0?'var(--green)':'var(--red)';
-    const ewEvCol  = ewEvNum>0?'var(--green)':'var(--red)';
-    h += `<div class="flip-back-title">${ewHorse}</div>`;
-    h += `<div class="flip-back-sub">${x.race||''} · ${x.distance||''} · ${x.going||''}</div>`;
-
-    // Side-by-side: Win pick vs E/W pick comparison
-    h += `<div class="compare-wrap">
-      <div class="compare-col win">
-        <div class="compare-head" style="color:var(--amber)">WIN: ${x.winPick||'—'}</div>
-        <div class="compare-row"><span>Probability</span><span>${x.winProbability||'—'}</span></div>
-        <div class="compare-row"><span>Odds</span><span>${x.winOdds||'—'}</span></div>
-        <div class="compare-row"><span>EV per £1</span><span style="color:${winEvCol}">${x.winEv||'—'}</span></div>
-        <div class="compare-row"><span>Edge</span><span style="color:${winEvCol}">${x.winEdge||'—'}</span></div>
-      </div>
-      <div class="compare-col ew">
-        <div class="compare-head" style="color:var(--green)">E/W: ${ewHorse}</div>
-        <div class="compare-row"><span>Confidence</span><span>${x.aiConf}%</span></div>
-        <div class="compare-row"><span>Odds</span><span>${ewOdds||'—'}</span></div>
-        <div class="compare-row"><span>EV per £1</span><span style="color:${ewEvCol}">${x.valueEv||'—'}</span></div>
-        <div class="compare-row"><span>Edge</span><span style="color:${ewEvCol}">${x.valueEdge||'—'}</span></div>
-      </div>
-    </div>`;
-
-    h += `<div class="flip-back-grid">
-      <div class="flip-back-stat"><div class="flip-back-stat-val" style="color:${vrCol}">${x.valueRating||'—'}</div><div class="flip-back-stat-label">VALUE RATING</div></div>
-      <div class="flip-back-stat"><div class="flip-back-stat-val" style="color:var(--green)">${x.kellyStake||'—'}</div><div class="flip-back-stat-label">KELLY STAKE</div></div>
-    </div>`;
-    h += row('Place Terms', x.ewPlaceTerms||'', 'var(--text)');
-    h += row('Runners', x.numRunners||'', 'var(--text)');
-    if(x.pickScore>0) h += row('Pick Score', x.pickScore.toFixed(0)+'/100', x.pickScore>=72?'var(--green)':x.pickScore>=62?'var(--amber)':'var(--muted)');
-    if(x.ew_trainer) h += row('Trainer', x.ew_trainer, 'var(--text)');
-    if(x.ew_jockey)  h += row('Jockey', x.ew_jockey, 'var(--text)');
-  } else {
-    // MLB
-    const vrCol = vCol(x.valueRating||'');
-    h += `<div class="flip-back-title">${x.winner||''}</div>`;
-    h += `<div class="flip-back-sub">${x.opponent||''} @ ${x.team||''}</div>`;
-    h += `<div class="flip-back-grid">
-      <div class="flip-back-stat"><div class="flip-back-stat-val" style="color:${col(x.blended||x.aiConf)}">${x.blended||x.aiConf}%</div><div class="flip-back-stat-label">CONFIDENCE</div></div>
-      <div class="flip-back-stat"><div class="flip-back-stat-val" style="color:${vrCol}">${x.valueRating||'—'}</div><div class="flip-back-stat-label">VALUE</div></div>
-      <div class="flip-back-stat"><div class="flip-back-stat-val" style="color:var(--amber)">${x.valueEdge||'—'}</div><div class="flip-back-stat-label">EDGE</div></div>
-      <div class="flip-back-stat"><div class="flip-back-stat-val" style="color:${vrCol}">${x.valueEv||'—'}</div><div class="flip-back-stat-label">EV £1</div></div>
-    </div>`;
-
-    h += row('Win Probability', x.win_probability?x.win_probability+'%':'', col(x.win_probability));
-    h += row('Form Rating', x.form_rating||'', 'var(--text)');
-    h += row('Value Rating', x.valueRating||'', vrCol);
-    h += row('Kelly Stake', x.kellyStake||'', 'var(--green)');
-    h += row('Recommendation', x.recommendation||'', x.recommendation==='BET'?'var(--green)':'var(--muted)');
-  }
-  return h;
-}
-
 function render(){let h='';if(currentTab==='mlb')h=renderMLB();else if(currentTab==='racing')h=renderRacing();else if(currentTab==='history')h=renderHistory();else if(currentTab==='accas')h=renderAccas();else if(currentTab==='stats')h=renderStats();document.getElementById('content').innerHTML=h;}
 function renderAccas(){
   if(!allData.accas||!allData.accas.length) return empty('🎯','NO ACCAS YET','Run the daily sweep to generate accumulators');
@@ -961,14 +577,6 @@ function renderAccas(){
       <div style="font-size:22px;font-family:'Bebas Neue',sans-serif;color:${col};margin-left:8px">${conf}%</div>
     </div>`;
   });
-
-  // Cover bet builder — 70%+ picks only, separate MLB/Racing lists
-  const mlb70 = allData.mlb.filter(x=>(x.blended||x.aiConf||0)>=70).sort((a,b)=>(b.blended||b.aiConf)-(a.blended||a.aiConf))
-    .map(x=>({name:x.winner||'',sub:x.opponent?`vs ${x.opponent}`:'',conf:x.blended||x.aiConf||0}));
-  const racing70 = allData.racing.filter(x=>{const c=(x.pickScore>0?x.pickScore:(x.blended||x.aiConf||0));return c>=70&&x.ewRec!=='SKIP';})
-    .sort((a,b)=>(b.pickScore>0?b.pickScore:(b.blended||b.aiConf))-(a.pickScore>0?a.pickScore:(a.blended||a.aiConf)))
-    .map(x=>({name:x.winner||'',sub:x.race||'',conf:Math.round(x.pickScore>0?x.pickScore:(x.blended||x.aiConf||0))}));
-  h += renderCoverBetSection(mlb70, racing70);
 
   h += '<div class="section-header" style="margin-top:16px">SUGGESTED ACCUMULATORS</div>';
   const typeEmoji = {MLB:'⚾',RACING:'🐎',MIXED:'🎯'};
@@ -1016,21 +624,5 @@ function switchTab(tab,el,nav){
 }
 if(SHEET_ID&&API_KEY)loadData();else renderSetupPrompt(); loadAnalytics(); initSheetSwipe();
 </script>
-<div class="odds-modal-overlay" id="odds-modal-overlay" onclick="closeOddsConverter(event)">
-  <div class="odds-modal" onclick="event.stopPropagation()">
-    <div class="odds-modal-title">ODDS CONVERTER</div>
-    <div class="odds-input-row">
-      <input type="number" id="odds-num" class="odds-input" placeholder="5" oninput="updateOddsResult()">
-      <span class="odds-slash">/</span>
-      <input type="number" id="odds-den" class="odds-input" placeholder="8" oninput="updateOddsResult()">
-    </div>
-    <div class="odds-result">
-      <div class="odds-result-val" id="odds-result-val">—</div>
-      <div class="odds-result-label">DECIMAL ODDS</div>
-    </div>
-    <div class="odds-implied" id="odds-implied"></div>
-    <button class="odds-close-btn" onclick="closeOddsConverter()">CLOSE</button>
-  </div>
-</div>
 </body>
 </html>
