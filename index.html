@@ -223,7 +223,7 @@ async function loadData(){
   const _seenRacing=new Set();
   allData.racing=_rawRacing.filter(x=>{if(!x.winner||!x.race)return false;const k=x.race+'|'+x.winner;if(_seenRacing.has(k))return false;_seenRacing.add(k);return true;});
   //allData.racing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winner:r[2]||'',odds:r[3]||'',eachWay:r[4]||'',ewPlaceTerms:r[5]||'',aiConf:parseInt(r[6])||0,going:r[7]||'',ewResult:r[8]||'',ewRec:r[9]||'',winVsEwEv:r[10]||'',placeProb:r[11]||'',distance:r[12]||'',actual:r[13]||'',result:r[14]||'PENDING',time:r[15]||''}));
-    allData.history=historyRows.map(r=>({date:r[0]||'',sport:r[1]||'',team:r[2]||'',opponent:r[3]||'',winPick:r[4]||'',ewPick:r[5]||'',aiConf:parseInt(r[6])||0,actual:r[8]||'',result:r[9]||'PENDING',get winner(){const ep=this.ewPick?this.ewPick.split(' at ')[0].trim():'';return this.sport==='RACING'&&ep&&ep.toLowerCase()!=='none'?ep:this.winPick;}}));
+    allData.history=historyRows.map(r=>({date:r[0]||'',sport:r[1]||'',team:r[2]||'',opponent:r[3]||'',winPick:r[4]||'',ewPick:r[5]||'',aiConf:parseInt(r[6])||0,actual:r[8]||'',result:r[9]||'PENDING',ewResult:r[11]||'',winResult:r[12]||'',get winner(){const ep=this.ewPick?this.ewPick.split(' at ')[0].trim():'';return this.sport==='RACING'&&ep&&ep.toLowerCase()!=='none'?ep:this.winPick;}}));
     const stats={};
     allData.history.forEach(p=>{
     const s=p.sport||'ALL';
@@ -276,16 +276,21 @@ function renderRacing(){
     // E/W pick is the star — show as main card
     const ewRecCol = x.ewRec==='BET E/W'||x.ewRec==='E/W'?'var(--green)':x.ewRec==='SKIP'?'var(--muted)':'var(--amber)';
     const scoreCol = x.pickScore>=72?'var(--green)':x.pickScore>=62?'var(--amber)':'var(--muted)';
-    const scoreBadge = x.pickScore>0?`<span style="font-size:8px;color:${scoreCol};border:1px solid ${scoreCol};border-radius:3px;padding:1px 5px;margin-left:6px">SCORE ${x.pickScore.toFixed(0)}</span>"`:'';
+    const scoreBadge = x.pickScore>0?`<span style="font-size:8px;color:${scoreCol};border:1px solid ${scoreCol};border-radius:3px;padding:1px 5px;margin-left:6px">SCORE ${x.pickScore.toFixed(0)}</span>`:'';
     // Parse odds from eachWay string
     const ewOddsRaw = x.odds || (x.eachWay?(x.eachWay.match(/at ([\d\/]+)/)||[])[1]||'':'') || '';
     const oddsDisplay = ewOddsRaw ? `<span style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--amber);background:rgba(255,180,0,0.1);border:1px solid rgba(255,180,0,0.3);border-radius:4px;padding:2px 7px;margin-left:6px">${ewOddsRaw}</span>` : '';
     const ewLabel = x.ewRec==='SKIP'
-      ? `<span style="color:var(--muted);font-size:11px">⛔ SKIP — odds under 6/1${ewOddsRaw?' ('+ewOddsRaw+')':''}</span>`
+      ? `<span style="color:var(--muted);font-size:11px">⛔ SKIP — odds under 8/1${ewOddsRaw?' ('+ewOddsRaw+')':''}</span>`
       : `<span style="color:var(--green);font-size:11px;font-weight:600">✅ BET E/W${ewOddsRaw?' @ '+ewOddsRaw:''}</span>`;
     const winNote = x.winPick&&x.winPick!==x.winner?`<span style="color:var(--muted);font-size:10px">Win pick: ${x.winPick}${x.winOdds?' ('+x.winOdds+')':''}</span>`:'';
     const distBadge = x.distance?`<span style="color:var(--muted);font-size:10px;background:var(--card2);padding:2px 6px;border-radius:4px;margin-left:4px">${x.distance}</span>`:''; const goingBadge = x.going?`<span style="color:var(--muted);font-size:10px;background:var(--card2);padding:2px 6px;border-radius:4px;margin-left:4px">${x.going}</span>`:''; const extraInfo = [ewLabel, winNote, x.ewPlaceTerms?`Place terms: ${x.ewPlaceTerms}`:'', distBadge, goingBadge].filter(Boolean).join(' | ');
-    h+=flipWrap(card(x.winner,x.race,x.aiConf,x.result,x.time,x.odds,extraInfo,x.ewRec,x.kellyStake,'',x.valueEdge,x.ewRec==='SKIP'?'NO VALUE':x.valueRating,x.valueEdge,x.valueEv),{winner:x.winner,race:x.race,aiConf:x.aiConf,eachWay:x.eachWay||'',winPick:x.winPick||'',winOdds:x.winOdds||'',ewRec:x.ewRec||'',ewPlaceTerms:x.ewPlaceTerms||'',valueRating:x.valueRating||'',valueEdge:x.valueEdge||'',valueEv:x.valueEv||'',kellyStake:x.kellyStake||'',going:x.going||'',distance:x.distance||'',pickScore:x.pickScore||0,ew_trainer:x.ew_trainer||'',ew_jockey:x.ew_jockey||'',winProbability:x.winProbability||'',winEv:x.winEv||'',winEdge:x.winEdge||''});
+    // Show the granular pick_score (e.g. 63.4%) as the main confidence figure
+    // when it's available — it's a finer-grained blend of AI confidence,
+    // condition adjustments, and value rating than the plain round-number
+    // aiConf, which just reflects the AI's own stated round confidence.
+    const displayConf = x.pickScore>0 ? x.pickScore : x.aiConf;
+    h+=flipWrap(card(x.winner,x.race,displayConf,x.ewResult||x.result,x.time,x.odds,extraInfo,x.ewRec,x.kellyStake,'',x.valueEdge,x.ewRec==='SKIP'?'NO VALUE':x.valueRating,x.valueEdge,x.valueEv),{winner:x.winner,race:x.race,aiConf:x.aiConf,eachWay:x.eachWay||'',winPick:x.winPick||'',winOdds:x.winOdds||'',ewRec:x.ewRec||'',ewPlaceTerms:x.ewPlaceTerms||'',valueRating:x.valueRating||'',valueEdge:x.valueEdge||'',valueEv:x.valueEv||'',kellyStake:x.kellyStake||'',going:x.going||'',distance:x.distance||'',pickScore:x.pickScore||0,ew_trainer:x.ew_trainer||'',ew_jockey:x.ew_jockey||'',winProbability:x.winProbability||'',winEv:x.winEv||'',winEdge:x.winEdge||''});
   });
   return h;
 }
@@ -293,13 +298,36 @@ function renderHistory(){
   const _twoDaysAgo=new Date(Date.now()-2*24*60*60*1000).toISOString().slice(0,10);
   const d=allData.history.filter(x=>x.date>=_twoDaysAgo).slice().reverse();if(!d.length)return empty('📋','NO HISTORY YET','Make some predictions to build your history');
   let h='<div class="section-header">RECENT PREDICTIONS</div>';
-  d.forEach(x=>{const s=x.sport==='RACING'?x.team:(x.opponent?`${x.opponent} @ ${x.team}`:x.team);const _r=x.result||'';
-    const _rDisp=_r==='WIN PLACED'?'PLACED':_r;
-    const resultBadge=_r==='CORRECT'||_r==='PLACED'||_r==='WIN PLACED'
-      ?`<span style="color:var(--green);font-size:11px;font-weight:500">✓ ${_rDisp}</span>`
-      :_r==='INCORRECT'||_r==='UNPLACED'
-      ?`<span style="color:var(--red);font-size:11px;font-weight:500">✗ ${_rDisp}</span>`
-      :`<span style="color:var(--muted);font-size:11px">⏳ PENDING</span>`;const ewOdds=x.sport==='RACING'&&x.ewPick?x.ewPick.match(/at ([\d\/]+)/)?.[1]||'':'';
+  d.forEach(x=>{const s=x.sport==='RACING'?x.team:(x.opponent?`${x.opponent} @ ${x.team}`:x.team);
+    let resultBadge;
+    if(x.sport==='RACING'){
+      // Two independent results: the E/W pick is the focus and always shown
+      // first; the separate win pick (if one exists and differs from the
+      // E/W horse) gets its own smaller badge alongside it. Never merged.
+      const ewR=x.ewResult||'';
+      const ewBadge=ewR==='PLACED'
+        ?`<span style="color:var(--green);font-size:11px;font-weight:600">✓ E/W PLACED</span>`
+        :ewR==='UNPLACED'
+        ?`<span style="color:var(--red);font-size:11px;font-weight:600">✗ E/W UNPLACED</span>`
+        :`<span style="color:var(--muted);font-size:11px">⏳ E/W PENDING</span>`;
+      const hasSeparateWinPick=x.winPick&&x.winPick!==x.winner;
+      const winR=x.winResult||'';
+      const winBadge=!hasSeparateWinPick?''
+        :winR==='WON'
+        ?`<span style="color:var(--green);font-size:9px;font-weight:500">✓ Win pick WON</span>`
+        :winR==='LOST'
+        ?`<span style="color:var(--muted);font-size:9px">Win pick lost</span>`
+        :`<span style="color:var(--muted);font-size:9px">⏳ Win pick pending</span>`;
+      resultBadge=`<div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">${ewBadge}${winBadge}</div>`;
+    }else{
+      const _r=x.result||'';
+      resultBadge=_r==='CORRECT'
+        ?`<span style="color:var(--green);font-size:11px;font-weight:500">✓ ${_r}</span>`
+        :_r==='INCORRECT'
+        ?`<span style="color:var(--red);font-size:11px;font-weight:500">✗ ${_r}</span>`
+        :`<span style="color:var(--muted);font-size:11px">⏳ PENDING</span>`;
+    }
+    const ewOdds=x.sport==='RACING'&&x.ewPick?x.ewPick.match(/at ([\d\/]+)/)?.[1]||'':'';
     const oddsTag=ewOdds?`<span class="odds"> ${ewOdds}</span>`:'';
     const ewLabel=x.sport==='RACING'&&x.ewPick&&x.ewPick.toLowerCase()!=='none'?`<span style="font-size:9px;color:var(--muted);letter-spacing:1px;margin-left:6px">E/W</span>`:'';
     h+=`<div class="card"><div class="card-sport">${s}</div><div class="card-winner">${x.winner}${oddsTag}${ewLabel}</div><div class="card-meta"><div class="conf-bar-wrap"><div class="conf-label">CONFIDENCE</div><div class="conf-bar"><div class="conf-fill" style="width:${x.aiConf}%;background:${x.aiConf>=70?'var(--green)':x.aiConf>=45?'var(--amber)':'var(--red)'}"></div></div></div><div class="conf-pct" style="color:${x.aiConf>=70?'var(--green)':x.aiConf>=45?'var(--amber)':'var(--red)'}">${x.aiConf}%</div>${resultBadge}<div class="card-time">${x.date.slice(0,10)}</div></div></div>`;});
