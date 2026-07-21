@@ -205,25 +205,21 @@ async function loadData(){
   if(!SHEET_ID||!API_KEY){renderSetupPrompt();return;}
   
   try{
-    const[mlbRows,racingRows,historyRows,betsRows,accaRows,autoBetRows,autoBetCoverRows]=await Promise.all([
+    const[mlbRows,racingRows,historyRows,betsRows,accaRows]=await Promise.all([
       fetchSheet('Daily Summary','A4:S200'),
       fetchSheet('Racing','A3:Y200'),
       fetchSheet('History','A5:K2000'),
       fetchSheet('Bets','A2:I500').catch(()=>[]),
       fetchSheet('Accas','A2:H100').catch(()=>[]),
-      fetchSheet('AutoBet','A2:K1000').catch(()=>[]),
-      fetchSheet('AutoBetCover','A2:K200').catch(()=>[]),
     ]);
     allData.bets=betsRows;
-    allData.autoBets=(autoBetRows||[]).map(r=>({timestamp:r[0]||'',race:r[1]||'',ewHorse:r[2]||'',odds:r[3]||'',stakeEw:r[4]||'',totalOutlay:r[5]||'',valueRating:r[6]||'',edge:r[7]||'',confidence:r[8]||'',status:r[9]||'PENDING',wonOutright:r[10]||''}));
-    allData.autoBetCovers=(autoBetCoverRows||[]).map(r=>({timestamp:r[0]||'',coverType:r[1]||'',bets:r[2]||0,legs:r[3]||'',lineStake:r[4]||'',totalOutlay:r[5]||'',status:r[6]||'PENDING',winReturn:r[7]||'',placeReturn:r[8]||'',totalReturn:r[9]||'',pnl:r[10]||''}));
     allData.accas=(accaRows||[]).map(r=>({date:r[0]||'',type:r[1]||'',legs:r[2]||'',odds:r[3]||'',returns:r[4]||'',conf:r[5]||'',combinedProb:r[6]||'',selections:(r[7]||'')}));
     allData.mlb=mlbRows.map(r=>({date:r[0]||'',sport:r[1]||'MLB',team:r[2]||'',opponent:r[3]||'',winner:r[4]||'',score:r[5]||'',aiConf:parseInt(r[6])||0,blended:parseInt(r[7])||0,actual:r[8]||'',result:r[9]||'PENDING',time:r[11]||'TBD',recommendation:r[12]||'',kellyStake:r[13]||'',fixedStake:r[14]||'',edge:r[15]||'',valueRating:r[16]||'',valueEdge:r[17]||'',valueEv:r[18]||''}));
     const _rawRacing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winPick:r[2]||'',winOdds:r[3]||'',eachWay:r[4]||'',ewPlaceTerms:r[5]||'',aiConf:parseInt(r[6])||0,going:r[7]||'',ewResult:r[8]||'',ewRec:r[9]||'',winVsEwEv:r[10]||'',placeProb:r[11]||'',distance:r[12]||'',actual:r[13]||'',result:r[14]||'PENDING',time:r[15]||'',valueRating:r[16]||'',valueEdge:r[17]||'',valueEv:r[18]||'',kellyStake:r[19]||'',pickScore:parseFloat(r[20])||0,winProbability:r[21]||'',winOddsCol:r[22]||'',winEv:r[23]||'',winEdge:r[24]||'',get winner(){return this.eachWay?this.eachWay.split(' at ')[0].split(' -')[0].split(',')[0].trim():this.winPick;},get odds(){return this.eachWay?this.eachWay.match(/at ([\d\/]+)/)?.[1]||this.winOdds:this.winOdds;}}));
   const _seenRacing=new Set();
   allData.racing=_rawRacing.filter(x=>{if(!x.winner||!x.race)return false;const k=x.race+'|'+x.winner;if(_seenRacing.has(k))return false;_seenRacing.add(k);return true;});
   //allData.racing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winner:r[2]||'',odds:r[3]||'',eachWay:r[4]||'',ewPlaceTerms:r[5]||'',aiConf:parseInt(r[6])||0,going:r[7]||'',ewResult:r[8]||'',ewRec:r[9]||'',winVsEwEv:r[10]||'',placeProb:r[11]||'',distance:r[12]||'',actual:r[13]||'',result:r[14]||'PENDING',time:r[15]||''}));
-    allData.history=historyRows.map(r=>({date:r[0]||'',sport:r[1]||'',team:r[2]||'',opponent:r[3]||'',winPick:r[4]||'',ewPick:r[5]||'',aiConf:parseInt(r[6])||0,actual:r[8]||'',result:r[9]||'PENDING',ewResult:r[11]||'',winResult:r[12]||'',get winner(){const ep=this.ewPick?this.ewPick.split(' at ')[0].trim():'';return this.sport==='RACING'&&ep&&ep.toLowerCase()!=='none'?ep:this.winPick;}}));
+    allData.history=historyRows.map(r=>({date:r[0]||'',sport:r[1]||'',team:r[2]||'',opponent:r[3]||'',winPick:r[4]||'',ewPick:r[5]||'',aiConf:parseInt(r[6])||0,actual:r[8]||'',result:r[9]||'PENDING',get winner(){const ep=this.ewPick?this.ewPick.split(' at ')[0].trim():'';return this.sport==='RACING'&&ep&&ep.toLowerCase()!=='none'?ep:this.winPick;}}));
     const stats={};
     allData.history.forEach(p=>{
     const s=p.sport||'ALL';
@@ -276,21 +272,16 @@ function renderRacing(){
     // E/W pick is the star — show as main card
     const ewRecCol = x.ewRec==='BET E/W'||x.ewRec==='E/W'?'var(--green)':x.ewRec==='SKIP'?'var(--muted)':'var(--amber)';
     const scoreCol = x.pickScore>=72?'var(--green)':x.pickScore>=62?'var(--amber)':'var(--muted)';
-    const scoreBadge = x.pickScore>0?`<span style="font-size:8px;color:${scoreCol};border:1px solid ${scoreCol};border-radius:3px;padding:1px 5px;margin-left:6px">SCORE ${x.pickScore.toFixed(0)}</span>`:'';
+    const scoreBadge = x.pickScore>0?`<span style="font-size:8px;color:${scoreCol};border:1px solid ${scoreCol};border-radius:3px;padding:1px 5px;margin-left:6px">SCORE ${x.pickScore.toFixed(0)}</span>"`:'';
     // Parse odds from eachWay string
     const ewOddsRaw = x.odds || (x.eachWay?(x.eachWay.match(/at ([\d\/]+)/)||[])[1]||'':'') || '';
     const oddsDisplay = ewOddsRaw ? `<span style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--amber);background:rgba(255,180,0,0.1);border:1px solid rgba(255,180,0,0.3);border-radius:4px;padding:2px 7px;margin-left:6px">${ewOddsRaw}</span>` : '';
     const ewLabel = x.ewRec==='SKIP'
-      ? `<span style="color:var(--muted);font-size:11px">⛔ SKIP — odds under 8/1${ewOddsRaw?' ('+ewOddsRaw+')':''}</span>`
+      ? `<span style="color:var(--muted);font-size:11px">⛔ SKIP — odds under 6/1${ewOddsRaw?' ('+ewOddsRaw+')':''}</span>`
       : `<span style="color:var(--green);font-size:11px;font-weight:600">✅ BET E/W${ewOddsRaw?' @ '+ewOddsRaw:''}</span>`;
     const winNote = x.winPick&&x.winPick!==x.winner?`<span style="color:var(--muted);font-size:10px">Win pick: ${x.winPick}${x.winOdds?' ('+x.winOdds+')':''}</span>`:'';
     const distBadge = x.distance?`<span style="color:var(--muted);font-size:10px;background:var(--card2);padding:2px 6px;border-radius:4px;margin-left:4px">${x.distance}</span>`:''; const goingBadge = x.going?`<span style="color:var(--muted);font-size:10px;background:var(--card2);padding:2px 6px;border-radius:4px;margin-left:4px">${x.going}</span>`:''; const extraInfo = [ewLabel, winNote, x.ewPlaceTerms?`Place terms: ${x.ewPlaceTerms}`:'', distBadge, goingBadge].filter(Boolean).join(' | ');
-    // Show the granular pick_score (e.g. 63.4%) as the main confidence figure
-    // when it's available — it's a finer-grained blend of AI confidence,
-    // condition adjustments, and value rating than the plain round-number
-    // aiConf, which just reflects the AI's own stated round confidence.
-    const displayConf = x.pickScore>0 ? x.pickScore : x.aiConf;
-    h+=flipWrap(card(x.winner,x.race,displayConf,x.ewResult||x.result,x.time,x.odds,extraInfo,x.ewRec,x.kellyStake,'',x.valueEdge,x.ewRec==='SKIP'?'NO VALUE':x.valueRating,x.valueEdge,x.valueEv),{winner:x.winner,race:x.race,aiConf:x.aiConf,eachWay:x.eachWay||'',winPick:x.winPick||'',winOdds:x.winOdds||'',ewRec:x.ewRec||'',ewPlaceTerms:x.ewPlaceTerms||'',valueRating:x.valueRating||'',valueEdge:x.valueEdge||'',valueEv:x.valueEv||'',kellyStake:x.kellyStake||'',going:x.going||'',distance:x.distance||'',pickScore:x.pickScore||0,ew_trainer:x.ew_trainer||'',ew_jockey:x.ew_jockey||'',winProbability:x.winProbability||'',winEv:x.winEv||'',winEdge:x.winEdge||''});
+    h+=flipWrap(card(x.winner,x.race,x.aiConf,x.result,x.time,x.odds,extraInfo,x.ewRec,x.kellyStake,'',x.valueEdge,x.ewRec==='SKIP'?'NO VALUE':x.valueRating,x.valueEdge,x.valueEv),{winner:x.winner,race:x.race,aiConf:x.aiConf,eachWay:x.eachWay||'',winPick:x.winPick||'',winOdds:x.winOdds||'',ewRec:x.ewRec||'',ewPlaceTerms:x.ewPlaceTerms||'',valueRating:x.valueRating||'',valueEdge:x.valueEdge||'',valueEv:x.valueEv||'',kellyStake:x.kellyStake||'',going:x.going||'',distance:x.distance||'',pickScore:x.pickScore||0,ew_trainer:x.ew_trainer||'',ew_jockey:x.ew_jockey||'',winProbability:x.winProbability||'',winEv:x.winEv||'',winEdge:x.winEdge||''});
   });
   return h;
 }
@@ -298,36 +289,13 @@ function renderHistory(){
   const _twoDaysAgo=new Date(Date.now()-2*24*60*60*1000).toISOString().slice(0,10);
   const d=allData.history.filter(x=>x.date>=_twoDaysAgo).slice().reverse();if(!d.length)return empty('📋','NO HISTORY YET','Make some predictions to build your history');
   let h='<div class="section-header">RECENT PREDICTIONS</div>';
-  d.forEach(x=>{const s=x.sport==='RACING'?x.team:(x.opponent?`${x.opponent} @ ${x.team}`:x.team);
-    let resultBadge;
-    if(x.sport==='RACING'){
-      // Two independent results: the E/W pick is the focus and always shown
-      // first; the separate win pick (if one exists and differs from the
-      // E/W horse) gets its own smaller badge alongside it. Never merged.
-      const ewR=x.ewResult||'';
-      const ewBadge=ewR==='PLACED'
-        ?`<span style="color:var(--green);font-size:11px;font-weight:600">✓ E/W PLACED</span>`
-        :ewR==='UNPLACED'
-        ?`<span style="color:var(--red);font-size:11px;font-weight:600">✗ E/W UNPLACED</span>`
-        :`<span style="color:var(--muted);font-size:11px">⏳ E/W PENDING</span>`;
-      const hasSeparateWinPick=x.winPick&&x.winPick!==x.winner;
-      const winR=x.winResult||'';
-      const winBadge=!hasSeparateWinPick?''
-        :winR==='WON'
-        ?`<span style="color:var(--green);font-size:9px;font-weight:500">✓ Win pick WON</span>`
-        :winR==='LOST'
-        ?`<span style="color:var(--muted);font-size:9px">Win pick lost</span>`
-        :`<span style="color:var(--muted);font-size:9px">⏳ Win pick pending</span>`;
-      resultBadge=`<div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">${ewBadge}${winBadge}</div>`;
-    }else{
-      const _r=x.result||'';
-      resultBadge=_r==='CORRECT'
-        ?`<span style="color:var(--green);font-size:11px;font-weight:500">✓ ${_r}</span>`
-        :_r==='INCORRECT'
-        ?`<span style="color:var(--red);font-size:11px;font-weight:500">✗ ${_r}</span>`
-        :`<span style="color:var(--muted);font-size:11px">⏳ PENDING</span>`;
-    }
-    const ewOdds=x.sport==='RACING'&&x.ewPick?x.ewPick.match(/at ([\d\/]+)/)?.[1]||'':'';
+  d.forEach(x=>{const s=x.sport==='RACING'?x.team:(x.opponent?`${x.opponent} @ ${x.team}`:x.team);const _r=x.result||'';
+    const _rDisp=_r==='WIN PLACED'?'PLACED':_r;
+    const resultBadge=_r==='CORRECT'||_r==='PLACED'||_r==='WIN PLACED'
+      ?`<span style="color:var(--green);font-size:11px;font-weight:500">✓ ${_rDisp}</span>`
+      :_r==='INCORRECT'||_r==='UNPLACED'
+      ?`<span style="color:var(--red);font-size:11px;font-weight:500">✗ ${_rDisp}</span>`
+      :`<span style="color:var(--muted);font-size:11px">⏳ PENDING</span>`;const ewOdds=x.sport==='RACING'&&x.ewPick?x.ewPick.match(/at ([\d\/]+)/)?.[1]||'':'';
     const oddsTag=ewOdds?`<span class="odds"> ${ewOdds}</span>`:'';
     const ewLabel=x.sport==='RACING'&&x.ewPick&&x.ewPick.toLowerCase()!=='none'?`<span style="font-size:9px;color:var(--muted);letter-spacing:1px;margin-left:6px">E/W</span>`:'';
     h+=`<div class="card"><div class="card-sport">${s}</div><div class="card-winner">${x.winner}${oddsTag}${ewLabel}</div><div class="card-meta"><div class="conf-bar-wrap"><div class="conf-label">CONFIDENCE</div><div class="conf-bar"><div class="conf-fill" style="width:${x.aiConf}%;background:${x.aiConf>=70?'var(--green)':x.aiConf>=45?'var(--amber)':'var(--red)'}"></div></div></div><div class="conf-pct" style="color:${x.aiConf>=70?'var(--green)':x.aiConf>=45?'var(--amber)':'var(--red)'}">${x.aiConf}%</div>${resultBadge}<div class="card-time">${x.date.slice(0,10)}</div></div></div>`;});
@@ -433,130 +401,6 @@ function renderStats(){
     <div class="stat"><div class="stat-val" style="color:${plCol}">${bpl.total>=0?'+':''}£${bpl.total.toFixed(0)}</div><div class="stat-label">BET P&L</div></div>
     <div class="stat"><div class="stat-val" style="color:${plCol}">${roi>=0?'+':''}${roi.toFixed(0)}%</div><div class="stat-label">ROI</div></div>
   </div>`;
-
-  // Auto-Bet Dry Run — simulated running bankroll, not real money.
-  // Mirrors auto_bet.py's simulate_bankroll(): replays every SETTLED bet in
-  // chronological order against a standalone bankroll starting at £5, paying
-  // both win+place legs when wonOutright is confirmed TRUE, otherwise
-  // falling back to place-side-only (conservative, for older entries settled
-  // before that flag existed).
-  const ab = allData.autoBets||[];
-  if(ab.length){
-    const STARTING_BANKROLL = 5.00;
-    const parseMoney = v => parseFloat((v||'').replace('£',''))||0;
-    const oddsToDec = s => { const m=(s||'').match(/(\d+)\/(\d+)/); return m?1+(parseInt(m[1])/parseInt(m[2])):0; };
-
-    const abPending = ab.filter(b=>b.status==='PENDING');
-    const sorted = [...ab].sort((a,b)=>(a.timestamp||'').localeCompare(b.timestamp||''));
-
-    let bankroll = STARTING_BANKROLL;
-    let settledCount = 0, placedCount = 0, unplacedCount = 0;
-    sorted.forEach(b=>{
-      if(b.status!=='PLACED'&&b.status!=='UNPLACED') return;
-      settledCount++;
-      const outlay = parseMoney(b.totalOutlay);
-      const stakeEw = parseMoney(b.stakeEw);
-      const dec = oddsToDec(b.odds);
-      let change = -outlay;
-      if(b.status==='PLACED'){
-        placedCount++;
-        const placeDec = dec>1 ? (dec-1)/5+1 : 0;
-        if(b.wonOutright==='TRUE'){
-          change += stakeEw*dec + stakeEw*placeDec; // both legs pay
-        } else {
-          change += stakeEw*placeDec; // place leg only (or unknown — conservative)
-        }
-      } else {
-        unplacedCount++;
-      }
-      bankroll += change;
-    });
-
-    const pnl = bankroll - STARTING_BANKROLL;
-    const pnlCol = pnl>=0?'var(--green)':'var(--red)';
-
-    h+=`<div class="section-header" style="margin-top:16px">AUTO-BET DRY RUN <span style="color:var(--muted);font-size:9px">(SIMULATED — NOT REAL MONEY)</span></div>
-    <div class="stat-bar">
-      <div class="stat"><div class="stat-val">£${STARTING_BANKROLL.toFixed(2)}</div><div class="stat-label">STARTING</div></div>
-      <div class="stat"><div class="stat-val" style="color:${pnlCol}">£${bankroll.toFixed(2)}</div><div class="stat-label">SIM BANKROLL NOW</div></div>
-      <div class="stat"><div class="stat-val" style="color:${pnlCol}">${pnl>=0?'+':''}£${pnl.toFixed(2)}</div><div class="stat-label">TOTAL P&L</div></div>
-    </div>
-    <div style="font-size:10px;color:var(--muted);text-align:center;margin-top:-6px;margin-bottom:10px">
-      ${ab.length} logged · ${abPending.length} pending · ${settledCount} settled (${placedCount} placed, ${unplacedCount} unplaced)<br>
-      "What you'd have if you'd followed every auto-bet from £${STARTING_BANKROLL.toFixed(2)}"
-    </div>`;
-
-    // Individual bet cards — pending (what it WOULD bet) shown first, most
-    // recent settled bets shown after for context. Same card style as the
-    // existing Accas top-picks list, for visual consistency across tabs.
-    const abStatusCol = s => s==='PLACED'?'var(--green)':s==='UNPLACED'?'var(--red)':'var(--amber)';
-    const renderAbCard = b => {
-      const col = abStatusCol(b.status);
-      const stakeDisp = b.stakeEw||'';
-      const won = b.wonOutright==='TRUE' ? ' <span style="color:var(--green);font-size:9px">WON OUTRIGHT</span>' : '';
-      return `<div style="background:var(--card);border:1px solid var(--border);border-left:3px solid ${col};border-radius:8px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
-        <div style="flex:1">
-          <div style="font-size:10px;color:var(--muted);margin-bottom:3px">🐎 ${b.race||''} · ${b.timestamp||''}</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px">${b.ewHorse||''} @ ${b.odds||''}${won}</div>
-          <div style="font-size:10px;color:var(--muted);margin-top:2px">${b.valueRating||''} ${b.edge||''} · ${b.confidence||''} conf · E/W ${stakeDisp}/line</div>
-        </div>
-        <div style="font-size:13px;font-family:'Bebas Neue',sans-serif;color:${col};margin-left:8px;text-align:right">${b.status||'PENDING'}</div>
-      </div>`;
-    };
-
-    if(abPending.length){
-      h+=`<div class="section-header" style="margin-top:12px">PENDING — WHAT IT WOULD BET NEXT</div>`;
-      [...abPending].sort((a,b)=>(b.timestamp||'').localeCompare(a.timestamp||'')).forEach(b=>{h+=renderAbCard(b);});
-    }
-
-    const abRecentSettled = [...ab].filter(b=>b.status==='PLACED'||b.status==='UNPLACED')
-      .sort((a,b)=>(b.timestamp||'').localeCompare(a.timestamp||'')).slice(0,10);
-    if(abRecentSettled.length){
-      h+=`<div class="section-header" style="margin-top:12px">RECENTLY SETTLED</div>`;
-      abRecentSettled.forEach(b=>{h+=renderAbCard(b);});
-    }
-  }
-
-  // Cover Bet Dry Run — only logged on days 3+ picks already cleared the
-  // singles bar; a separate parallel ledger, not a replacement for the above.
-  const acb = allData.autoBetCovers||[];
-  if(acb.length){
-    const parseMoney2 = v => parseFloat((v||'').replace('£',''))||0;
-    const cbPending = acb.filter(c=>c.status==='PENDING');
-    const cbSettled = acb.filter(c=>c.status==='SETTLED');
-    const cbOutlay = cbSettled.reduce((s,c)=>s+parseMoney2(c.totalOutlay),0);
-    const cbReturn = cbSettled.reduce((s,c)=>s+parseMoney2(c.totalReturn),0);
-    const cbPnl = cbReturn - cbOutlay;
-    const cbCol = cbPnl>=0?'var(--green)':'var(--red)';
-
-    h+=`<div class="section-header" style="margin-top:16px">COVER BET DRY RUN <span style="color:var(--muted);font-size:9px">(SIMULATED — NOT REAL MONEY)</span></div>
-    <div class="stat-bar">
-      <div class="stat"><div class="stat-val">${acb.length}</div><div class="stat-label">LOGGED</div></div>
-      <div class="stat"><div class="stat-val" style="color:var(--amber)">${cbPending.length}</div><div class="stat-label">PENDING</div></div>
-      <div class="stat"><div class="stat-val" style="color:${cbCol}">${cbPnl>=0?'+':''}£${cbPnl.toFixed(2)}</div><div class="stat-label">SETTLED P&L</div></div>
-    </div>
-    <div style="font-size:10px;color:var(--muted);text-align:center;margin-top:-6px;margin-bottom:10px">
-      Only fires when 3+ picks already cleared the singles bar same day · compare against Auto-Bet above
-    </div>`;
-
-    const cbStatusCol = s => s==='SETTLED'?'var(--green)':'var(--amber)';
-    [...acb].sort((a,b)=>(b.timestamp||'').localeCompare(a.timestamp||'')).forEach(c=>{
-      const col = cbStatusCol(c.status);
-      const pnlLine = c.status==='SETTLED'
-        ? `<div style="font-size:10px;color:${(parseMoney2(c.pnl)>=0)?'var(--green)':'var(--red)'};margin-top:2px">Return ${c.totalReturn||''} · P/L ${c.pnl||''}</div>`
-        : '';
-      h+=`<div style="background:var(--card);border:1px solid var(--border);border-left:3px solid ${col};border-radius:8px;padding:12px;margin-bottom:8px">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px">${c.coverType||''}</div>
-          <div style="font-size:13px;font-family:'Bebas Neue',sans-serif;color:${col}">${c.status||''}</div>
-        </div>
-        <div style="font-size:10px;color:var(--muted);margin-top:3px">${c.legs||''}</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:3px">${c.lineStake||''}/line · ${c.totalOutlay||''} total outlay</div>
-        ${pnlLine}
-      </div>`;
-    });
-  }
-
   return h;
 }
 function renderSetupPrompt(){document.getElementById('content').innerHTML=`<div style="padding:24px 0"><div class="empty"><div class="empty-icon">⚙️</div><div class="empty-title">SETUP REQUIRED</div><div class="empty-sub" style="margin-bottom:20px">Connect your Google Sheet to see predictions on your phone</div></div><div class="setup-hint" onclick="openConfig()">Tap here to enter your Google Sheets ID and API Key →</div></div>`;}
@@ -926,7 +770,7 @@ function buildFlipBack(x){
         <div class="compare-row"><span>Confidence</span><span>${x.aiConf}%</span></div>
         <div class="compare-row"><span>Odds</span><span>${ewOdds||'—'}</span></div>
         <div class="compare-row"><span>EV per £1</span><span style="color:${ewEvCol}">${x.valueEv||'—'}</span></div>
-        <div class="compare-row"><span>Edge</span><span style="color:${ewEvCol}">${x.valueEdge||'—'}</span></div>
+        <div class="compare-row"><span>Edge</span><span style="color:${ewEvCol}">${x.valueEdge?x.valueEdge+'%':'—'}</span></div>
       </div>
     </div>`;
 
@@ -947,7 +791,7 @@ function buildFlipBack(x){
     h += `<div class="flip-back-grid">
       <div class="flip-back-stat"><div class="flip-back-stat-val" style="color:${col(x.blended||x.aiConf)}">${x.blended||x.aiConf}%</div><div class="flip-back-stat-label">CONFIDENCE</div></div>
       <div class="flip-back-stat"><div class="flip-back-stat-val" style="color:${vrCol}">${x.valueRating||'—'}</div><div class="flip-back-stat-label">VALUE</div></div>
-      <div class="flip-back-stat"><div class="flip-back-stat-val" style="color:var(--amber)">${x.valueEdge||'—'}</div><div class="flip-back-stat-label">EDGE</div></div>
+      <div class="flip-back-stat"><div class="flip-back-stat-val" style="color:var(--amber)">${x.valueEdge?x.valueEdge+'%':'—'}</div><div class="flip-back-stat-label">EDGE</div></div>
       <div class="flip-back-stat"><div class="flip-back-stat-val" style="color:${vrCol}">${x.valueEv||'—'}</div><div class="flip-back-stat-label">EV £1</div></div>
     </div>`;
 
