@@ -208,7 +208,7 @@ async function loadData(){
     const[mlbRows,racingRows,historyRows,betsRows,accaRows,autoBetRows,autoBetCoverRows]=await Promise.all([
       fetchSheet('Daily Summary','A4:S200'),
       fetchSheet('Racing','A3:Y200'),
-      fetchSheet('History','A5:K2000'),
+      fetchSheet('History','A5:M2000'),
       fetchSheet('Bets','A2:I500').catch(()=>[]),
       fetchSheet('Accas','A2:H100').catch(()=>[]),
       fetchSheet('AutoBet','A2:K1000').catch(()=>[]),
