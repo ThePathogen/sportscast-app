@@ -228,14 +228,46 @@ async function loadData(){
     allData.history.forEach(p=>{
     const s=p.sport||'ALL';
     if(!stats[s])stats[s]={correct:0,incorrect:0,pending:0,placed:0,unplaced:0};
-    if(p.result==='CORRECT')stats[s].correct++;
-    else if(p.result==='INCORRECT')stats[s].incorrect++;
-    else if(p.result==='PLACED'||p.result==='WIN PLACED')stats[s].placed++;
-    else if(p.result&&p.result.includes('UNPLACED'))stats[s].unplaced++;
-    else stats[s].pending++;
+    if(s==='RACING'){
+      // Win pick accuracy must come from the win pick's own outcome, not the
+      // merged E/W result — racing has never written "CORRECT"/"INCORRECT"
+      // (that's MLB-only), so the old check here could never fire for
+      // racing at all. winResult (from column M) is the real source; for
+      // rows predating that column, WIN PLACED/UNPLACED can be inferred
+      // unambiguously from the legacy merged field, but plain PLACED cannot
+      // (the old logic discarded whether a separate win pick also won) so
+      // those rows are left uncounted rather than guessed.
+      let winOutcome=p.winResult||'';
+      if(!winOutcome){
+        if(p.result==='WIN PLACED')winOutcome='WON';
+        else if(p.result==='UNPLACED')winOutcome='LOST';
+      }
+      if(winOutcome==='WON')stats[s].correct++;
+      else if(winOutcome==='LOST')stats[s].incorrect++;
+      const ewOutcome=p.ewResult||(p.result==='PLACED'||p.result==='WIN PLACED'?'PLACED':p.result==='UNPLACED'?'UNPLACED':'');
+      if(ewOutcome==='PLACED')stats[s].placed++;
+      else if(ewOutcome==='UNPLACED')stats[s].unplaced++;
+      else stats[s].pending++;
+    }else{
+      if(p.result==='CORRECT')stats[s].correct++;
+      else if(p.result==='INCORRECT')stats[s].incorrect++;
+      else stats[s].pending++;
+    }
     if(!stats['ALL'])stats['ALL']={correct:0,incorrect:0,pending:0,placed:0,unplaced:0};
-    if(s!=='ALL'){if(p.result==='CORRECT')stats['ALL'].correct++;else if(p.result==='INCORRECT')stats['ALL'].incorrect++;else if(p.result&&p.result.includes('PLACED')&&!p.result.includes('UN'))stats['ALL'].placed++;else if(p.result&&p.result.includes('UNPLACED'))stats['ALL'].unplaced++;else stats['ALL'].pending++;}
+    if(s!=='ALL'){
+      stats['ALL'].correct+=0; // ALL totals recomputed below from per-sport stats to avoid duplicating the branching logic
+    }
   });
+    // Roll up ALL from the per-sport totals now that RACING and non-RACING use different rules
+    stats['ALL']={correct:0,incorrect:0,pending:0,placed:0,unplaced:0};
+    Object.entries(stats).forEach(([sp,st])=>{
+      if(sp==='ALL')return;
+      stats['ALL'].correct+=st.correct;
+      stats['ALL'].incorrect+=st.incorrect;
+      stats['ALL'].pending+=st.pending;
+      stats['ALL'].placed+=st.placed;
+      stats['ALL'].unplaced+=st.unplaced;
+    });
     allData.stats=stats;
     render();
   }catch(e){renderError(e.message);}
