@@ -207,7 +207,7 @@ async function loadData(){
   try{
     const[mlbRows,racingRows,historyRows,betsRows,accaRows,autoBetRows,autoBetCoverRows]=await Promise.all([
       fetchSheet('Daily Summary','A4:S200'),
-      fetchSheet('Racing','A3:Y200'),
+      fetchSheet('Racing','A3:Z200'),
       fetchSheet('History','A5:M2000'),
       fetchSheet('Bets','A2:I500').catch(()=>[]),
       fetchSheet('Accas','A2:H100').catch(()=>[]),
@@ -219,7 +219,7 @@ async function loadData(){
     allData.autoBetCovers=(autoBetCoverRows||[]).map(r=>({timestamp:r[0]||'',coverType:r[1]||'',bets:r[2]||0,legs:r[3]||'',lineStake:r[4]||'',totalOutlay:r[5]||'',status:r[6]||'PENDING',winReturn:r[7]||'',placeReturn:r[8]||'',totalReturn:r[9]||'',pnl:r[10]||''}));
     allData.accas=(accaRows||[]).map(r=>({date:r[0]||'',type:r[1]||'',legs:r[2]||'',odds:r[3]||'',returns:r[4]||'',conf:r[5]||'',combinedProb:r[6]||'',selections:(r[7]||'')}));
     allData.mlb=mlbRows.map(r=>({date:r[0]||'',sport:r[1]||'MLB',team:r[2]||'',opponent:r[3]||'',winner:r[4]||'',score:r[5]||'',aiConf:parseInt(r[6])||0,blended:parseInt(r[7])||0,actual:r[8]||'',result:r[9]||'PENDING',time:r[11]||'TBD',recommendation:r[12]||'',kellyStake:r[13]||'',fixedStake:r[14]||'',edge:r[15]||'',valueRating:r[16]||'',valueEdge:r[17]||'',valueEv:r[18]||''}));
-    const _rawRacing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winPick:r[2]||'',winOdds:r[3]||'',eachWay:r[4]||'',ewPlaceTerms:r[5]||'',aiConf:parseInt(r[6])||0,going:r[7]||'',ewResult:r[8]||'',ewRec:r[9]||'',winVsEwEv:r[10]||'',placeProb:r[11]||'',distance:r[12]||'',actual:r[13]||'',result:r[14]||'PENDING',time:r[15]||'',valueRating:r[16]||'',valueEdge:r[17]||'',valueEv:r[18]||'',kellyStake:r[19]||'',pickScore:parseFloat(r[20])||0,winProbability:r[21]||'',winOddsCol:r[22]||'',winEv:r[23]||'',winEdge:r[24]||'',get winner(){return this.eachWay?this.eachWay.split(' at ')[0].split(' -')[0].split(',')[0].trim():this.winPick;},get odds(){return this.eachWay?this.eachWay.match(/at ([\d\/]+)/)?.[1]||this.winOdds:this.winOdds;}}));
+    const _rawRacing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winPick:r[2]||'',winOdds:r[3]||'',eachWay:r[4]||'',ewPlaceTerms:r[5]||'',aiConf:parseInt(r[6])||0,going:r[7]||'',ewResult:r[8]||'',ewRec:r[9]||'',winVsEwEv:r[10]||'',placeProb:r[11]||'',distance:r[12]||'',actual:r[13]||'',result:r[14]||'PENDING',time:r[15]||'',valueRating:r[16]||'',valueEdge:r[17]||'',valueEv:r[18]||'',kellyStake:r[19]||'',pickScore:parseFloat(r[20])||0,winProbability:r[21]||'',winOddsCol:r[22]||'',winEv:r[23]||'',winEdge:r[24]||'',simSource:r[25]||'',get winner(){return this.eachWay?this.eachWay.split(' at ')[0].split(' -')[0].split(',')[0].trim():this.winPick;},get odds(){return this.eachWay?this.eachWay.match(/at ([\d\/]+)/)?.[1]||this.winOdds:this.winOdds;}}));
   const _seenRacing=new Set();
   allData.racing=_rawRacing.filter(x=>{if(!x.winner||!x.race)return false;const k=x.race+'|'+x.winner;if(_seenRacing.has(k))return false;_seenRacing.add(k);return true;});
   //allData.racing=racingRows.map(r=>({date:r[0]||'',race:r[1]||'',winner:r[2]||'',odds:r[3]||'',eachWay:r[4]||'',ewPlaceTerms:r[5]||'',aiConf:parseInt(r[6])||0,going:r[7]||'',ewResult:r[8]||'',ewRec:r[9]||'',winVsEwEv:r[10]||'',placeProb:r[11]||'',distance:r[12]||'',actual:r[13]||'',result:r[14]||'PENDING',time:r[15]||''}));
@@ -309,6 +309,14 @@ function renderRacing(){
     const ewRecCol = x.ewRec==='BET E/W'||x.ewRec==='E/W'?'var(--green)':x.ewRec==='SKIP'?'var(--muted)':'var(--amber)';
     const scoreCol = x.pickScore>=72?'var(--green)':x.pickScore>=62?'var(--amber)':'var(--muted)';
     const scoreBadge = x.pickScore>0?`<span style="font-size:8px;color:${scoreCol};border:1px solid ${scoreCol};border-radius:3px;padding:1px 5px;margin-left:6px">SCORE ${x.pickScore.toFixed(0)}</span>`:'';
+    // Shows whether this pick's confidence is grounded in the Monte Carlo
+    // simulation, or fell back to the AI's raw self-stated text number
+    // (happens when runner data wasn't available for that race).
+    const simBadge = x.simSource==='Simulated'
+      ? `<span style="color:var(--muted);font-size:9px" title="Confidence backed by a 1000-run Monte Carlo simulation">🎲 Simulated</span>`
+      : x.simSource==='AI only'
+      ? `<span style="color:var(--muted);font-size:9px" title="No simulation data available for this race — confidence is the AI's own stated number">🤖 AI only</span>`
+      : '';
     // Parse odds from eachWay string
     const ewOddsRaw = x.odds || (x.eachWay?(x.eachWay.match(/at ([\d\/]+)/)||[])[1]||'':'') || '';
     const oddsDisplay = ewOddsRaw ? `<span style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--amber);background:rgba(255,180,0,0.1);border:1px solid rgba(255,180,0,0.3);border-radius:4px;padding:2px 7px;margin-left:6px">${ewOddsRaw}</span>` : '';
@@ -316,7 +324,7 @@ function renderRacing(){
       ? `<span style="color:var(--muted);font-size:11px">⛔ SKIP — odds under 8/1${ewOddsRaw?' ('+ewOddsRaw+')':''}</span>`
       : `<span style="color:var(--green);font-size:11px;font-weight:600">✅ BET E/W${ewOddsRaw?' @ '+ewOddsRaw:''}</span>`;
     const winNote = x.winPick&&x.winPick!==x.winner?`<span style="color:var(--muted);font-size:10px">Win pick: ${x.winPick}${x.winOdds?' ('+x.winOdds+')':''}</span>`:'';
-    const distBadge = x.distance?`<span style="color:var(--muted);font-size:10px;background:var(--card2);padding:2px 6px;border-radius:4px;margin-left:4px">${x.distance}</span>`:''; const goingBadge = x.going?`<span style="color:var(--muted);font-size:10px;background:var(--card2);padding:2px 6px;border-radius:4px;margin-left:4px">${x.going}</span>`:''; const extraInfo = [ewLabel, winNote, x.ewPlaceTerms?`Place terms: ${x.ewPlaceTerms}`:'', distBadge, goingBadge].filter(Boolean).join(' | ');
+    const distBadge = x.distance?`<span style="color:var(--muted);font-size:10px;background:var(--card2);padding:2px 6px;border-radius:4px;margin-left:4px">${x.distance}</span>`:''; const goingBadge = x.going?`<span style="color:var(--muted);font-size:10px;background:var(--card2);padding:2px 6px;border-radius:4px;margin-left:4px">${x.going}</span>`:''; const extraInfo = [ewLabel, winNote, x.ewPlaceTerms?`Place terms: ${x.ewPlaceTerms}`:'', distBadge, goingBadge, simBadge].filter(Boolean).join(' | ');
     // Show the granular pick_score (e.g. 63.4%) as the main confidence figure
     // when it's available — it's a finer-grained blend of AI confidence,
     // condition adjustments, and value rating than the plain round-number
@@ -955,7 +963,7 @@ function buildFlipBack(x){
       </div>
       <div class="compare-col ew">
         <div class="compare-head" style="color:var(--green)">E/W: ${ewHorse}</div>
-        <div class="compare-row"><span>Confidence</span><span>${x.aiConf}%</span></div>
+        <div class="compare-row"><span>Confidence</span><span>${x.pickScore>0?x.pickScore:x.aiConf}%</span></div>
         <div class="compare-row"><span>Odds</span><span>${ewOdds||'—'}</span></div>
         <div class="compare-row"><span>EV per £1</span><span style="color:${ewEvCol}">${x.valueEv||'—'}</span></div>
         <div class="compare-row"><span>Edge</span><span style="color:${ewEvCol}">${x.valueEdge||'—'}</span></div>
@@ -996,10 +1004,20 @@ function render(){let h='';if(currentTab==='mlb')h=renderMLB();else if(currentTa
 function renderAccas(){
   if(!allData.accas||!allData.accas.length) return empty('🎯','NO ACCAS YET','Run the daily sweep to generate accumulators');
 
-  // Get today's accas
-  const today = allData.accas.length ? allData.accas[allData.accas.length-1].date : '';
-  const todayAccas = allData.accas.filter(a=>a.date===today);
-  if(!todayAccas.length) return empty('🎯','NO ACCAS TODAY','Check back after the daily sweep');
+  // Compare against the REAL current date — the previous version just
+  // trusted whatever date sat on the last row ever written to the sheet,
+  // which silently showed stale accas (from whenever one was last actually
+  // generated) as if they were today's, with no indication they were old.
+  const realToday = new Date().toISOString().slice(0,10);
+  const lastAccaRow = allData.accas[allData.accas.length-1];
+  const lastAccaDate = (lastAccaRow.date||'').slice(0,10);
+  const todayAccas = allData.accas.filter(a=>(a.date||'').slice(0,10)===realToday);
+  if(!todayAccas.length){
+    const msg = lastAccaDate
+      ? `Most recent acca was generated ${lastAccaDate} — check back after today's sweep`
+      : 'Run the daily sweep to generate accumulators';
+    return empty('🎯','NO ACCA GENERATED TODAY', msg);
+  }
 
   // Top picks from MLB and Racing
   const allPreds = [...allData.mlb,...allData.racing];
