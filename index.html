@@ -208,11 +208,18 @@ async function loadData(){
     const[mlbRows,racingRows,historyRows,betsRows,accaRows,autoBetRows,autoBetCoverRows]=await Promise.all([
       fetchSheet('Daily Summary','A4:S200'),
       fetchSheet('Racing','A3:Z200'),
-      fetchSheet('History','A5:M2000'),
-      fetchSheet('Bets','A2:I500').catch(()=>[]),
-      fetchSheet('Accas','A2:H100').catch(()=>[]),
-      fetchSheet('AutoBet','A2:K1000').catch(()=>[]),
-      fetchSheet('AutoBetCover','A2:K200').catch(()=>[]),
+      // History/Bets/Accas/AutoBet/AutoBetCover are append-only logs that
+      // grow every sweep — a fixed row cap WILL eventually be exceeded and
+      // silently drop everything past it (this is what happened: History
+      // hit its A5:M2000 cap, so only the row sitting right at 2000 showed
+      // and every later entry — today's MLB games, other horses — never
+      // got fetched at all). Open-ended ranges (no end row number) return
+      // every row with data, so there's no cap left to hit.
+      fetchSheet('History','A5:M'),
+      fetchSheet('Bets','A2:I').catch(()=>[]),
+      fetchSheet('Accas','A2:H').catch(()=>[]),
+      fetchSheet('AutoBet','A2:K').catch(()=>[]),
+      fetchSheet('AutoBetCover','A2:K').catch(()=>[]),
     ]);
     allData.bets=betsRows;
     allData.autoBets=(autoBetRows||[]).map(r=>({timestamp:r[0]||'',race:r[1]||'',ewHorse:r[2]||'',odds:r[3]||'',stakeEw:r[4]||'',totalOutlay:r[5]||'',valueRating:r[6]||'',edge:r[7]||'',confidence:r[8]||'',status:r[9]||'PENDING',wonOutright:r[10]||''}));
